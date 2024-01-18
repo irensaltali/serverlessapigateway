@@ -1,35 +1,51 @@
-[
-    {
-        "method": "GET",
-        "path": "/api/v1/health",
-        "response": {
-            "status": "ok"
+{
+    "servers": [
+        {
+            "alias": "ngrok",
+            "url": " https://bf3b-2a02-e0-665f-2400-6459-369a-e8ee-d9e6.ngrok-free.app"
         }
-    },
-    {
-        "method": "GET",
-        "path": "/api/v1/health/ready",
-        "response": {
-            "status": "ready ok"
+    ],
+    "paths": [
+        {
+            "method": "GET",
+            "path": "/api/v1/ngrok",
+            "integration": {
+                "type": "http_proxy",
+                "server": "ngrok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/ready",
+            "response": {
+                "status": "ready ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/live",
+            "response": {
+                "status": "live ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/string",
+            "response": "string ok"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/health",
+            "response": {
+                "status": "ok"
+            }
         }
-    },
-    {
-        "method": "GET",
-        "path": "/api/v1/health/live",
-        "response": {
-            "status": "live ok"
-        }
-    },
-    {
-        "method": "GET",
-        "path": "/api/v1/health/string",
-        "response": "string ok"
-    },
-    {
-        "method": "POST",
-        "path": "/api/v1/health",
-        "response": {
-            "status": "ok"
-        }
-    }
-]
+    ]
+}

@@ -1,5 +1,6 @@
 import { Router } from 'itty-router';
 import apiConfig from './api-config.json';
+import handleProxy from './proxy';
 
 const router = Router();
 
@@ -14,17 +15,29 @@ const routerMethods: { [key: string]: RouterMethod | undefined } = {
   DELETE: router.delete.bind(router),
   PATCH: router.patch.bind(router),
   ANY: router.all.bind(router),
-  ALL: router.all.bind(router),
 };
 
-apiConfig.forEach(({ method, path, response }) => {
-  const handler = () => new Response(JSON.stringify(response));
-  const routerMethod = routerMethods[method.toUpperCase()];
+apiConfig.paths.forEach((item) => {
 
+  const routerMethod = routerMethods[item.method.toUpperCase()];
+  
   if (routerMethod) {
-    routerMethod(path, handler);
+    let handler: (request: Request) => Promise<Response>;
+
+    if (item.integration) {
+      if (item.integration.type === 'http_proxy') {
+        const handler = () => async (request: Request, env: Env, ctx: ExecutionContext): Promise<Response> => {
+          const serverUrl = apiConfig.servers.find((server) => server.alias === item.integration.server)?.url;
+          const modifiedRequest = new Request(serverUrl + request.url, request);
+          return handleProxy.fetch(modifiedRequest, env, ctx);
+        };
+      }
+    } else {
+      const handler = async () => new Response(JSON.stringify(item.response));
+    }
+    routerMethod(item.path, handler);
   } else {
-    console.error(`Unsupported method: ${method}`);
+    console.error(`Unsupported method: ${item.method}`);
   }
 });
 

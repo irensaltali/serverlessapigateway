@@ -31,7 +31,7 @@ export default {
 
 		if (url.pathname.startsWith('/api/')) {
 			// You can also use more robust routing
-			return apiRouter.handle(request);
+			return apiRouter.handle(request, env, ctx);
 		}
 
 		return new Response(
