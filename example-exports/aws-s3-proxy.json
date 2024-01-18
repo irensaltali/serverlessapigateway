@@ -1,0 +1,610 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "MyS3",
+    "version" : "2016-10-13T23:04:43Z"
+  },
+  "servers" : [ {
+    "url" : "https://9gn28ca086.execute-api.{region}.amazonaws.com/{basePath}",
+    "variables" : {
+      "basePath" : {
+        "default" : "S3"
+      }
+    }
+  } ],
+  "paths" : {
+    "/{folder}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "folder",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Content-Length" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Date" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "GET",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path/{bucket}",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200",
+              "responseParameters" : {
+                "method.response.header.Content-Type" : "integration.response.header.Content-Type",
+                "method.response.header.Date" : "integration.response.header.Date",
+                "method.response.header.Content-Length" : "integration.response.header.content-length"
+              }
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "requestParameters" : {
+            "integration.request.path.bucket" : "method.request.path.folder"
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      },
+      "put" : {
+        "parameters" : [ {
+          "name" : "Content-Type",
+          "in" : "header",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "folder",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Content-Length" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "PUT",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path/{bucket}",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200",
+              "responseParameters" : {
+                "method.response.header.Content-Type" : "integration.response.header.Content-Type",
+                "method.response.header.Content-Length" : "integration.response.header.Content-Length"
+              }
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "requestParameters" : {
+            "integration.request.path.bucket" : "method.request.path.folder",
+            "integration.request.header.Content-Type" : "method.request.header.Content-Type"
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "folder",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Date" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "DELETE",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path/{bucket}",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200",
+              "responseParameters" : {
+                "method.response.header.Content-Type" : "integration.response.header.Content-Type",
+                "method.response.header.Date" : "integration.response.header.Date"
+              }
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "requestParameters" : {
+            "integration.request.path.bucket" : "method.request.path.folder"
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      }
+    },
+    "/{folder}/{item}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "item",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "folder",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "content-type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "GET",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path/{bucket}/{object}",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200",
+              "responseParameters" : {
+                "method.response.header.content-type" : "integration.response.header.content-type",
+                "method.response.header.Content-Type" : "integration.response.header.Content-Type"
+              }
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "requestParameters" : {
+            "integration.request.path.object" : "method.request.path.item",
+            "integration.request.path.bucket" : "method.request.path.folder"
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      },
+      "put" : {
+        "parameters" : [ {
+          "name" : "Content-Type",
+          "in" : "header",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "item",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "folder",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Content-Length" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "PUT",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path/{bucket}/{object}",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200",
+              "responseParameters" : {
+                "method.response.header.Content-Type" : "integration.response.header.Content-Type",
+                "method.response.header.Content-Length" : "integration.response.header.Content-Length"
+              }
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "requestParameters" : {
+            "integration.request.path.object" : "method.request.path.item",
+            "integration.request.path.bucket" : "method.request.path.folder",
+            "integration.request.header.Content-Type" : "method.request.header.Content-Type"
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "item",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "folder",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Content-Length" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "DELETE",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path/{bucket}/{object}",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200"
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "requestParameters" : {
+            "integration.request.path.object" : "method.request.path.item",
+            "integration.request.path.bucket" : "method.request.path.folder"
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      },
+      "head" : {
+        "parameters" : [ {
+          "name" : "item",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "folder",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Content-Length" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "HEAD",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path/{bucket}/{object}",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200",
+              "responseParameters" : {
+                "method.response.header.Content-Type" : "integration.response.header.Content-Type",
+                "method.response.header.Content-Length" : "integration.response.header.Content-Length"
+              }
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "requestParameters" : {
+            "integration.request.path.object" : "method.request.path.item",
+            "integration.request.path.bucket" : "method.request.path.folder"
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      }
+    },
+    "/" : {
+      "get" : {
+        "responses" : {
+          "400" : {
+            "description" : "400 response",
+            "content" : { }
+          },
+          "500" : {
+            "description" : "500 response",
+            "content" : { }
+          },
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Content-Length" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Timestamp" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              },
+              "Content-Type" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Empty"
+                }
+              }
+            }
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "credentials" : "arn:aws:iam::123456789012:role/apigAwsProxyRole",
+          "httpMethod" : "GET",
+          "uri" : "arn:aws:apigateway:us-west-2:s3:path//",
+          "responses" : {
+            "4\\d{2}" : {
+              "statusCode" : "400"
+            },
+            "default" : {
+              "statusCode" : "200",
+              "responseParameters" : {
+                "method.response.header.Content-Type" : "integration.response.header.Content-Type",
+                "method.response.header.Content-Length" : "integration.response.header.Content-Length",
+                "method.response.header.Timestamp" : "integration.response.header.Date"
+              }
+            },
+            "5\\d{2}" : {
+              "statusCode" : "500"
+            }
+          },
+          "passthroughBehavior" : "when_no_match",
+          "type" : "aws"
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "Empty" : {
+        "title" : "Empty Schema",
+        "type" : "object"
+      }
+    }
+  }
+}

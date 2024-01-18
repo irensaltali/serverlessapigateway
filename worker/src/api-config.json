@@ -1,0 +1,35 @@
+[
+    {
+        "method": "GET",
+        "path": "/api/v1/health",
+        "response": {
+            "status": "ok"
+        }
+    },
+    {
+        "method": "GET",
+        "path": "/api/v1/health/ready",
+        "response": {
+            "status": "ready ok"
+        }
+    },
+    {
+        "method": "GET",
+        "path": "/api/v1/health/live",
+        "response": {
+            "status": "live ok"
+        }
+    },
+    {
+        "method": "GET",
+        "path": "/api/v1/health/string",
+        "response": "string ok"
+    },
+    {
+        "method": "POST",
+        "path": "/api/v1/health",
+        "response": {
+            "status": "ok"
+        }
+    }
+]
