@@ -23,6 +23,14 @@
             }
         },
         {
+            "method": "GET",
+            "path": "/api/v1/ngrok/proxy/{.+}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "ngrok"
+            }
+        },
+        {
             "method": "POST",
             "path": "/api/v1/ngrok",
             "integration": {
