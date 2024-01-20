@@ -10,7 +10,7 @@ export default {
 
 		var matchedPath = apiConfig.paths.find((item) => item.path === url.pathname);
 		console.log(matchedPath);
-		if (matchedPath) {
+		if (matchedPath && matchedPath.method === request.method) {
 			console.log(matchedPath);
 			if (matchedPath.integration) {
 				console.log('type:'+matchedPath.integration.type);
