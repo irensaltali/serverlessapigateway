@@ -31,6 +31,27 @@
             }
         },
         {
+            "method": "GET",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is GET method"
+            }
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is POST method"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is ANY method"
+            }
+        },
+        {
             "method": "POST",
             "path": "/api/v1/ngrok",
             "integration": {

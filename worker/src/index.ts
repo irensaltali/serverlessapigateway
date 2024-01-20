@@ -6,7 +6,17 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
-		var matchedPath = apiConfig.paths.find((item) => pathsMatch(item.path, url.pathname) && item.method === request.method);
+		// Filter paths based on URL match
+		var matchedPaths = apiConfig.paths.filter(item => pathsMatch(item.path, url.pathname));
+
+		// First, try to find an exact method match
+		var exactMethodMatch = matchedPaths.find(item => item.method === request.method);
+		if (exactMethodMatch) 
+			var matchedPath = exactMethodMatch;
+		else
+			// If no exact match, fallback to ANY method
+			var matchedPath = matchedPaths.find(item => item.method === 'ANY');
+		
 		console.log(matchedPath);
 		if (matchedPath) {
 			if (matchedPath.integration) {
@@ -18,7 +28,7 @@ export default {
 					return fetch(modifiedRequest);
 				}
 			} else {
-				return new Response(JSON.stringify(matchedPath.response));
+				return new Response(JSON.stringify(matchedPath.response),{ headers: { 'Content-Type': 'application/json' }});
 			}
 		}
 
