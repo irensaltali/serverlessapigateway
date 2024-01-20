@@ -1,16 +1,4 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
-import handleProxy from './proxy';
-import handleRedirect from './redirect';
-import apiRouter from './router';
+import apiConfig from './api-config.json';
 
 // Export a default object containing event handlers
 export default {
@@ -20,18 +8,21 @@ export default {
 		// You'll find it helpful to parse the request.url string into a URL object. Learn more at https://developer.mozilla.org/en-US/docs/Web/API/URL
 		const url = new URL(request.url);
 
-		// You can get pretty far with simple logic like if/switch-statements
-		switch (url.pathname) {
-			case '/redirect':
-				return handleRedirect.fetch(request, env, ctx);
-
-			case '/proxy':
-				return handleProxy.fetch(request, env, ctx);
-		}
-
-		if (url.pathname.startsWith('/api/')) {
-			// You can also use more robust routing
-			return apiRouter.handle(request, env, ctx);
+		var matchedPath = apiConfig.paths.find((item) => item.path === url.pathname);
+		console.log(matchedPath);
+		if (matchedPath) {
+			console.log(matchedPath);
+			if (matchedPath.integration) {
+				console.log('type:'+matchedPath.integration.type);
+				if (matchedPath.integration.type === 'http_proxy') {
+					const server = apiConfig.servers.find((server) => server.alias === matchedPath?.integration?.server);
+					console.log(server);
+					const modifiedRequest = new Request(server?.url + url.pathname, request);
+					return fetch(modifiedRequest);
+				}
+			} else {
+				return new Response(JSON.stringify(matchedPath.response));
+			}
 		}
 
 		return new Response(
