@@ -1,5 +1,4 @@
 import apiConfig from './api-config.json';
-import './path-ops';
 import { pathsMatch } from './path-ops';
 
 
