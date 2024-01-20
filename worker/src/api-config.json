@@ -15,6 +15,14 @@
             }
         },
         {
+            "method": "POST",
+            "path": "/api/v1/ngrok",
+            "integration": {
+                "type": "http_proxy",
+                "server": "ngrok"
+            }
+        },
+        {
             "method": "GET",
             "path": "/api/v1/health",
             "response": {

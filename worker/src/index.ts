@@ -8,9 +8,9 @@ export default {
 		// You'll find it helpful to parse the request.url string into a URL object. Learn more at https://developer.mozilla.org/en-US/docs/Web/API/URL
 		const url = new URL(request.url);
 
-		var matchedPath = apiConfig.paths.find((item) => item.path === url.pathname);
+		var matchedPath = apiConfig.paths.find((item) => item.path === url.pathname && item.method === request.method);
 		console.log(matchedPath);
-		if (matchedPath && matchedPath.method === request.method) {
+		if (matchedPath) {
 			console.log(matchedPath);
 			if (matchedPath.integration) {
 				console.log('type:'+matchedPath.integration.type);
