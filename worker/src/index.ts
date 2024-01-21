@@ -7,6 +7,11 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
+		// Handle CORS preflight (OPTIONS) requests first
+		if (apiConfig.cors && request.method === 'OPTIONS') {
+			return setCorsHeaders(new Response(null, { status: 204 }));
+		}
+
 		// Filter paths based on URL match
 		const matchedPaths = apiConfig.paths.filter(item => pathsMatch(item.path, url.pathname));
 
@@ -23,11 +28,6 @@ export default {
 			} else {
 				return setCorsHeaders(new Response(JSON.stringify(matchedPath.response), { headers: { 'Content-Type': 'application/json' } }));
 			}
-		}
-
-		// If no match found, but cors is enabled, return cors headers and 204
-		if (apiConfig.cors && request.method === 'OPTIONS') {
-			return setCorsHeaders(new Response(null, { status: 204 }));
 		}
 
 		return setCorsHeaders(new Response(
