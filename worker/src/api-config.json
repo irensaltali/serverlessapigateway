@@ -5,6 +5,14 @@
             "url": "https://584b-2a02-e0-665f-2400-4c2b-5084-b2b-2772.ngrok-free.app"
         }
     ],
+    "cors":{
+        "allow_origins": ["*"],
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["*"],
+        "expose_headers": ["*"],
+        "allow_credentials": true,
+        "max_age": 3600
+    },
     "paths": [
         {
             "method": "GET",
