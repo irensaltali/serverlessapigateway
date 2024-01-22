@@ -8,8 +8,8 @@ export default {
 		const url = new URL(request.url);
 
 		// Handle CORS preflight (OPTIONS) requests first
-		if (apiConfig.cors && request.method === 'OPTIONS') {
-			return setCorsHeaders(new Response(null, { status: 204 }));
+		if (apiConfig.cors && request.method === 'OPTIONS' && !apiConfig.paths.find(item => item.method === 'OPTIONS' && pathsMatch(item.path, url.pathname))) {
+				return setCorsHeaders(new Response(null, { status: 204 }));
 		}
 
 		// Filter paths based on URL match

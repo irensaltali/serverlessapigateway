@@ -60,6 +60,13 @@
             }
         },
         {
+            "method": "OPTIONS",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is OPTIONS method"
+            }
+        },
+        {
             "method": "POST",
             "path": "/api/v1/ngrok",
             "integration": {
