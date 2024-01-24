@@ -5,7 +5,7 @@
             "url": "https://584b-2a02-e0-665f-2400-4c2b-5084-b2b-2772.ngrok-free.app"
         }
     ],
-    "cors":{
+    "cors": {
         "allow_origins": ["*"],
         "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["*"],
@@ -13,7 +13,30 @@
         "allow_credentials": true,
         "max_age": 3600
     },
+    "authorizer": {
+        "type": "jwt",
+        "secret": "TESTcc7e0d44fd473002f1c42167459001140ec6389b7353f8088f4d9a95f2f596f2",
+        "algorithm": "HS256",
+        "audience": "opensourcecommunity",
+        "issuer": "serverlessapigw"
+    },
     "paths": [
+        {
+            "method": "GET",
+            "path": "/api/v1/auth",
+            "response": {
+                "status": "this is authenticated GET method"
+            },
+            "auth": true
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/no-auth",
+            "response": {
+                "status": "this is un-authenticated GET method"
+            },
+            "auth": false
+        },
         {
             "method": "GET",
             "path": "/api/v1/ngrok",
