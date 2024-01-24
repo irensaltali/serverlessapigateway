@@ -2,7 +2,7 @@
     "servers": [
         {
             "alias": "ngrok",
-            "url": "https://584b-2a02-e0-665f-2400-4c2b-5084-b2b-2772.ngrok-free.app"
+            "url": "https://a8ee-176-88-98-23.ngrok-free.app"
         }
     ],
     "cors": {
@@ -21,6 +21,26 @@
         "issuer": "serverlessapigw"
     },
     "paths": [
+        {
+            "method": "GET",
+            "path": "/api/v1/mapping",
+            "integration": {
+                "type": "http_proxy",
+                "server": "ngrok"
+            },
+            "auth": true,
+            "mapping": {
+                "headers": {
+                    "key": "$request.header.key",
+                    "key2": "$request.jwt.key2",
+                    "key3": "$config.key3",
+                    "key4": "$request.query.key4"
+                }
+            },
+            "variables": {
+                "key3": "value3"
+            }
+        },
         {
             "method": "GET",
             "path": "/api/v1/auth",
