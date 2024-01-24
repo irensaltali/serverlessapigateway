@@ -1,5 +1,7 @@
 async function applyValueMapping(request: Request, mappingConfig: any, jwtPayload: any, configVariables: any): Promise<Request> {
     let newRequest = request.clone();
+    let url = new URL(newRequest.url);
+    let searchParams = new URLSearchParams(url.searchParams);
 
     if (mappingConfig.headers) {
         const newHeaders = new Headers(newRequest.headers);
@@ -15,7 +17,18 @@ async function applyValueMapping(request: Request, mappingConfig: any, jwtPayloa
         newRequest = new Request(newRequest, { headers: newHeaders });
     }
 
-    // Add logic for other targets like query parameters if needed
+    // Apply mappings to query parameters
+    if (mappingConfig.query) {
+        for (const [key, value] of Object.entries(mappingConfig.query)) {
+            const resolvedValue = resolveValue(String(value), request, jwtPayload, configVariables);
+            if (resolvedValue !== null) {
+                searchParams.set(key, resolvedValue);
+            }
+        }
+
+        url.search = searchParams.toString();
+        newRequest = new Request(url.toString(), newRequest);
+    }
 
     return newRequest;
 }
