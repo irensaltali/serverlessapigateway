@@ -25,7 +25,6 @@ export default {
 			var jwtPayload = null;
 			if (apiConfig.authorizer && matchedPath.auth) {
 				jwtPayload= await jwtAuth(request);
-				console.log(jwtPayload);
 				if (!jwtPayload.iss) {
 					return setCorsHeaders(new Response(
 						`Unauthorized.`,
