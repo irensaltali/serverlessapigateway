@@ -35,6 +35,12 @@
                     "key2": "$request.jwt.key2",
                     "key3": "$config.key3",
                     "key4": "$request.query.key4"
+                },
+                "query": {
+                    "key": "$request.query.key",
+                    "key2": "$request.jwt.key2",
+                    "key3": "$config.key3",
+                    "key4": "$request.query.key4"
                 }
             },
             "variables": {
