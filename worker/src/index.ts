@@ -1,14 +1,13 @@
 import apiConfig from './api-config.json';
+import { jwtAuth } from './auth';
 import { pathsMatch } from './path-ops';
 import { setCorsHeaders } from "./cors";
-import { jwtAuth } from './auth';
+import { applyValueMapping } from "./mapping";
 
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// Handle JWT Authorization
-		
-
 		const url = new URL(request.url);
 
 		// Handle CORS preflight (OPTIONS) requests first
@@ -23,17 +22,26 @@ export default {
 		const matchedPath = matchedPaths.find(item => item.method === request.method) || matchedPaths.find(item => item.method === 'ANY');
 
 		if (matchedPath) {
-			if (apiConfig.authorizer && matchedPath.auth && !await jwtAuth(request)) {
-				return setCorsHeaders(new Response(
-					`Unauthorized.`,
-					{ headers: { 'Content-Type': 'text/plain' }, status: 401 }
-				));
+			var jwtPayload = null;
+			if (apiConfig.authorizer && matchedPath.auth) {
+				jwtPayload= await jwtAuth(request);
+				console.log(jwtPayload);
+				if (!jwtPayload.iss) {
+					return setCorsHeaders(new Response(
+						`Unauthorized.`,
+						{ headers: { 'Content-Type': 'text/plain' }, status: 401 }
+					));
+				}
 			}
 
 			if (matchedPath.integration && matchedPath.integration.type === 'http_proxy') {
 				const server = apiConfig.servers.find(server => server.alias === matchedPath.integration.server);
 				if (server) {
-					const modifiedRequest = new Request(server.url + url.pathname, request);
+					var modifiedRequest = new Request(server.url + url.pathname + url.search, request);
+					if (matchedPath.mapping) {
+						console.log('Applying mapping:', matchedPath.mapping);
+						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables);
+					}
 					return fetch(modifiedRequest).then(response => setCorsHeaders(response));
 				}
 			} else {
