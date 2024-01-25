@@ -3,6 +3,7 @@ async function applyValueMapping(request: Request, mappingConfig: any, jwtPayloa
     let url = new URL(newRequest.url);
     let searchParams = new URLSearchParams(url.searchParams);
 
+    // Apply mappings to headers
     if (mappingConfig.headers) {
         const newHeaders = new Headers(newRequest.headers);
 
@@ -34,7 +35,7 @@ async function applyValueMapping(request: Request, mappingConfig: any, jwtPayloa
 }
 
 function resolveValue(template: string, request: Request, jwtPayload: any, configVariables: any): string | null {
-    const templateMatcher = /\$(request\.header|request\.jwt|config|request\.query)\.([a-zA-Z0-9]+)/g;
+    const templateMatcher = /\$(request\.header|request\.jwt|config|request\.query)\.([a-zA-Z0-9-_.]+)/g;    ;
     let match = templateMatcher.exec(template);
 
     if (match) {

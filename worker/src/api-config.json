@@ -31,20 +31,32 @@
             "auth": true,
             "mapping": {
                 "headers": {
-                    "key": "$request.header.key",
-                    "key2": "$request.jwt.key2",
-                    "key3": "$config.key3",
-                    "key4": "$request.query.key4"
+                    "x-jwt-sub": "$request.jwt.sub",
+                    "x-jwt-aud": "$request.jwt.aud",
+                    "x-jwt-iss": "$request.jwt.iss",
+                    "x-jwt-name": "$request.jwt.name",
+                    "x-jwt-email": "$request.jwt.email",
+                    "x-config-api-key": "$config.api_key",
+                    "x-config-database-url": "$config.database-url",
+                    "x-config-nested-config-key": "$config.nested.config.key",
+                    "x-query-userId": "$request.query.userId",
+                    "x-query-redirect_uri": "$request.query.redirect_uri"
                 },
                 "query": {
-                    "key": "$request.query.key",
-                    "key2": "$request.jwt.key2",
-                    "key3": "$config.key3",
-                    "key4": "$request.query.key4"
+                    "jwt-sub": "$request.jwt.sub",
+                    "jwt-aud": "$request.jwt.aud",
+                    "jwt-iss": "$request.jwt.iss",
+                    "jwt-name": "$request.jwt.name",
+                    "jwt-email": "$request.jwt.email",
+                    "config-api-key": "$config.api_key",
+                    "config-database-url": "$config.database-url",
+                    "config-nested-config-key": "$config.nested.config.key"
                 }
             },
             "variables": {
-                "key3": "value3"
+                "api_key": "API_KEY_VALUE",
+                "database-url": "sqlite://db.sqlite",
+                "nested.config.key": "nested config value" 
             }
         },
         {

@@ -11,6 +11,7 @@ async function jwtAuth(request: Request): Promise<JWTPayload> {
             issuer: apiConfig.authorizer?.issuer,
             audience: apiConfig.authorizer?.audience,
         });
+        console.log('JWT verification successful:', payload, protectedHeader);
 
         return payload;
     } catch (error) {
