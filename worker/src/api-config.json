@@ -2,7 +2,7 @@
     "servers": [
         {
             "alias": "ngrok",
-            "url": "https://584b-2a02-e0-665f-2400-4c2b-5084-b2b-2772.ngrok-free.app"
+            "url": "https://a8ee-176-88-98-23.ngrok-free.app"
         }
     ],
     "cors": {
@@ -21,6 +21,44 @@
         "issuer": "serverlessapigw"
     },
     "paths": [
+        {
+            "method": "GET",
+            "path": "/api/v1/mapping",
+            "integration": {
+                "type": "http_proxy",
+                "server": "ngrok"
+            },
+            "auth": true,
+            "mapping": {
+                "headers": {
+                    "x-jwt-sub": "$request.jwt.sub",
+                    "x-jwt-aud": "$request.jwt.aud",
+                    "x-jwt-iss": "$request.jwt.iss",
+                    "x-jwt-name": "$request.jwt.name",
+                    "x-jwt-email": "$request.jwt.email",
+                    "x-config-api-key": "$config.api_key",
+                    "x-config-database-url": "$config.database-url",
+                    "x-config-nested-config-key": "$config.nested.config.key",
+                    "x-query-userId": "$request.query.userId",
+                    "x-query-redirect_uri": "$request.query.redirect_uri"
+                },
+                "query": {
+                    "jwt-sub": "$request.jwt.sub",
+                    "jwt-aud": "$request.jwt.aud",
+                    "jwt-iss": "$request.jwt.iss",
+                    "jwt-name": "$request.jwt.name",
+                    "jwt-email": "$request.jwt.email",
+                    "config-api-key": "$config.api_key",
+                    "config-database-url": "$config.database-url",
+                    "config-nested-config-key": "$config.nested.config.key"
+                }
+            },
+            "variables": {
+                "api_key": "API_KEY_VALUE",
+                "database-url": "sqlite://db.sqlite",
+                "nested.config.key": "nested config value" 
+            }
+        },
         {
             "method": "GET",
             "path": "/api/v1/auth",

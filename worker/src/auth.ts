@@ -1,8 +1,8 @@
-import { jwtVerify } from 'jose';
+import { JWTPayload, jwtVerify } from 'jose';
 import apiConfig from './api-config.json';
 
 
-async function jwtAuth(request: Request): Promise<boolean> {
+async function jwtAuth(request: Request): Promise<JWTPayload> {
     try {
         const secret = new TextEncoder().encode(apiConfig.authorizer?.secret);
         const jwt = request.headers.get('Authorization')?.split(' ')[1] || '';
@@ -11,11 +11,12 @@ async function jwtAuth(request: Request): Promise<boolean> {
             issuer: apiConfig.authorizer?.issuer,
             audience: apiConfig.authorizer?.audience,
         });
+        console.log('JWT verification successful:', payload, protectedHeader);
 
-        return true;
+        return payload;
     } catch (error) {
         console.error('JWT verification failed:', error);
-        return false;
+        return {};
     }
 }
 
