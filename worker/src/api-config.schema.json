@@ -1,0 +1,185 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://serverlessapigateway.com/api-config.schema.json",
+    "title": "API Gateway Config",
+    "description": "Configuration for the Serverless API Gateway",
+    "type": "object",
+    "properties": {
+        "servers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "alias": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string",
+                        "format": "idn-hostname"
+                    }
+                },
+                "required": [
+                    "alias",
+                    "url"
+                ]
+            }
+        },
+        "cors": {
+            "type": "object",
+            "properties": {
+                "allow_origins": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "idn-hostname"
+                            },
+                            {
+                                "const": "*"
+                            }
+                        ]
+                    }
+                },
+                "allow_methods": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "enum": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "*"]
+                    }
+                },
+                "allow_headers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "expose_headers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "allow_credentials": {
+                    "type": "boolean"
+                },
+                "max_age": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "allow_origins",
+                "allow_methods",
+                "allow_headers",
+                "expose_headers",
+                "allow_credentials",
+                "max_age"
+            ]
+        },
+        "authorizer": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "jwt"
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "algorithm": {
+                    "const": "HS256"
+                },
+                "audience": {
+                    "type": "string"
+                },
+                "issuer": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "secret",
+                "algorithm",
+                "audience",
+                "issuer"
+            ]
+        },
+        "paths": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "enum": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "ANY"]
+                    },
+                    "path": {
+                        "type": "string",
+                        "format": "pathStart"
+                    },
+                    "integration": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "const": "http_proxy"
+                            },
+                            "server": {
+                                "type": "string",
+                                "$ref": "#/properties/servers/items/properties/alias"
+                            }
+                        },
+                        "required": [
+                            "type",
+                            "server"
+                        ]
+                    },
+                    "auth": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "mapping": {
+                        "type": "object",
+                        "properties": {
+                            "headers": {
+                                "type": "object"
+                            },
+                            "query": {
+                                "type": "object"
+                            }
+                        },
+                        "required": [
+                            "headers",
+                            "query"
+                        ]
+                    },
+                    "variables": {
+                        "type": "object"
+                    },
+                    "response": {
+                        "type": [
+                            "object",
+                            "string"
+                        ],
+                        "properties": {
+                            "status": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "method",
+                    "path"
+                ]
+            }
+        }
+    },
+    "required": [
+        "servers",
+        "cors",
+        "authorizer",
+        "paths"
+    ]
+}

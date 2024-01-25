@@ -1,6 +1,9 @@
 {
+    "$schema": "./api-config.schema.json",
+    "title": "API Gateway Config",
+    "description": "Configuration for the Serverless API Gateway",
     "servers": [
-        {
+        {   
             "alias": "ngrok",
             "url": "https://a8ee-176-88-98-23.ngrok-free.app"
         }
