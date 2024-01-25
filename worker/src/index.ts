@@ -3,6 +3,7 @@ import { jwtAuth } from './auth';
 import { pathsMatch } from './path-ops';
 import { setCorsHeaders } from "./cors";
 import { applyValueMapping } from "./mapping";
+import { setPoweredByHeader } from "./powered-by";
 
 
 export default {
@@ -12,7 +13,7 @@ export default {
 
 		// Handle CORS preflight (OPTIONS) requests first
 		if (apiConfig.cors && request.method === 'OPTIONS' && !apiConfig.paths.find(item => item.method === 'OPTIONS' && pathsMatch(item.path, url.pathname))) {
-			return setCorsHeaders(new Response(null, { status: 204 }));
+			return setPoweredByHeader(setCorsHeaders(new Response(null, { status: 204 })));
 		}
 
 		// Filter paths based on URL match
@@ -26,10 +27,10 @@ export default {
 			if (apiConfig.authorizer && matchedPath.auth) {
 				jwtPayload= await jwtAuth(request);
 				if (!jwtPayload.iss) {
-					return setCorsHeaders(new Response(
+					return setPoweredByHeader(setCorsHeaders(new Response(
 						`Unauthorized.`,
 						{ headers: { 'Content-Type': 'text/plain' }, status: 401 }
-					));
+					)));
 				}
 			}
 
@@ -41,16 +42,16 @@ export default {
 						console.log('Applying mapping:', matchedPath.mapping);
 						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables);
 					}
-					return fetch(modifiedRequest).then(response => setCorsHeaders(response));
+					return fetch(modifiedRequest).then(response => setPoweredByHeader(setCorsHeaders(response)));
 				}
 			} else {
-				return setCorsHeaders(new Response(JSON.stringify(matchedPath.response), { headers: { 'Content-Type': 'application/json' } }));
+				return setPoweredByHeader(setCorsHeaders(new Response(JSON.stringify(matchedPath.response), { headers: { 'Content-Type': 'application/json' } })));
 			}
 		}
 
-		return setCorsHeaders(new Response(
+		return setPoweredByHeader(setCorsHeaders(new Response(
 			`No match found.`,
 			{ headers: { 'Content-Type': 'text/plain' } }
-		));
+		)));
 	}
 };
