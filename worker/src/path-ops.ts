@@ -38,4 +38,38 @@ function pathsMatch(apiPath: string, urlPath: string): number {
     return 0; // Mismatch or partial match
 }
 
-export { pathsMatch };
+// Define types for server and path
+interface Server {
+    alias: string;
+    url: string;
+}
+
+interface Path {
+    method: string;
+    path: string;
+    integration: {
+        type: string;
+        server: string;
+    };
+    auth: boolean;
+}
+
+// Function to create a new request based on the matched path and server
+function createProxiedRequest(request: Request, server: Server, matchedPath: Path): Request {
+    const requestUrl = new URL(request.url);
+    let newPath = '';
+
+    if (matchedPath.integration.type === 'http_proxy') {
+        // For 'http_proxy', use the original path without the matching part
+        const matchedPathPart =  matchedPath.path.replace('{.+}', '');
+        newPath = requestUrl.pathname.replace(matchedPathPart, '/');
+        console.log('New path:', newPath);
+    }
+
+    // Create the new request with the updated URL
+    const newRequest =new Request(server.url + newPath + requestUrl.search, request);
+    return newRequest;
+}
+
+
+export { pathsMatch, createProxiedRequest };
