@@ -35,23 +35,28 @@ async function applyValueMapping(request: Request, mappingConfig: any, jwtPayloa
 }
 
 function resolveValue(template: string, request: Request, jwtPayload: any, configVariables: any): string | null {
-    const templateMatcher = /\$(request\.header|request\.jwt|config|request\.query)\.([a-zA-Z0-9-_.]+)/g;    ;
-    let match = templateMatcher.exec(template);
+    try {
 
-    if (match) {
-        switch (match[1]) {
-            case 'request.header':
-                return request.headers.get(match[2]) || null;
-            case 'request.jwt':
-                return jwtPayload[match[2]] || null;
-            case 'config':
-                return configVariables[match[2]] || null;
-            case 'request.query':
-                const url = new URL(request.url);
-                return url.searchParams.get(match[2]) || null;
-            default:
-                return null;
+        const templateMatcher = /\$(request\.header|request\.jwt|config|request\.query)\.([a-zA-Z0-9-_.]+)/g;;
+        let match = templateMatcher.exec(template);
+
+        if (match) {
+            switch (match[1]) {
+                case 'request.header':
+                    return request.headers.get(match[2]) || null;
+                case 'request.jwt':
+                    return jwtPayload[match[2]] || null;
+                case 'config':
+                    return configVariables[match[2]] || null;
+                case 'request.query':
+                    const url = new URL(request.url);
+                    return url.searchParams.get(match[2]) || null;
+                default:
+                    return null;
+            }
         }
+    } catch (error) {
+        console.error(error);
     }
 
     return null;
