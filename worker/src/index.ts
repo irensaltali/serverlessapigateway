@@ -1,14 +1,13 @@
 import apiConfig from './api-config.json';
 import { jwtAuth } from './auth';
-import { pathsMatch } from './path-ops';
 import { setCorsHeaders } from "./cors";
 import { applyValueMapping } from "./mapping";
 import { setPoweredByHeader } from "./powered-by";
+import { pathsMatch, createProxiedRequest } from './path-ops';
 
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		// Handle JWT Authorization
 		const url = new URL(request.url);
 
 		// Handle CORS preflight (OPTIONS) requests first
@@ -16,28 +15,33 @@ export default {
 			return setPoweredByHeader(setCorsHeaders(new Response(null, { status: 204 })));
 		}
 
-		// Filter paths based on URL match
-		const matchedPaths = apiConfig.paths.filter(item => pathsMatch(item.path, url.pathname));
 
-		// Find the matched path
-		const matchedPath = matchedPaths.find(item => item.method === request.method) || matchedPaths.find(item => item.method === 'ANY');
+		// Filter paths based on URL match and select the one with the most matched segments
+		const matchedPaths = apiConfig.paths
+			.map(item => ({ ...item, matchLength: pathsMatch(item.path, url.pathname) }))
+			.filter(item => item.matchLength > 0);
+
+		// Find the matched path with the most segments matching
+		const matchedPath = matchedPaths.sort((a, b) => b.matchLength - a.matchLength)[0];
+		console.log('Matched path:', matchedPath);
 
 		if (matchedPath) {
-			var jwtPayload = null;
+			var jwtPayload = {};
 			if (apiConfig.authorizer && matchedPath.auth) {
-				jwtPayload= await jwtAuth(request);
+				jwtPayload = await jwtAuth(request);
 				if (!jwtPayload.iss) {
 					return setPoweredByHeader(setCorsHeaders(new Response(
-						`Unauthorized.`,
-						{ headers: { 'Content-Type': 'text/plain' }, status: 401 }
+						JSON.stringify({ message: 'Unauthorized' }),
+						{ headers: { 'Content-Type': 'application/json' }, status: 401 }
 					)));
 				}
 			}
 
-			if (matchedPath.integration && matchedPath.integration.type === 'http_proxy') {
+			if (matchedPath.integration && matchedPath.integration.type.includes('http')) {
 				const server = apiConfig.servers.find(server => server.alias === matchedPath.integration.server);
 				if (server) {
-					var modifiedRequest = new Request(server.url + url.pathname + url.search, request);
+					var modifiedRequest = createProxiedRequest(request, server, matchedPath);
+					console.log('Modified request:', modifiedRequest);
 					if (matchedPath.mapping) {
 						console.log('Applying mapping:', matchedPath.mapping);
 						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables);
@@ -50,8 +54,8 @@ export default {
 		}
 
 		return setPoweredByHeader(setCorsHeaders(new Response(
-			`No match found.`,
-			{ headers: { 'Content-Type': 'text/plain' } }
+			JSON.stringify({ message: 'No match found.' }),
+			{ headers: { 'Content-Type': 'application/json' }, status: 404 }
 		)));
 	}
 };
