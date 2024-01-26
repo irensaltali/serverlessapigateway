@@ -120,7 +120,7 @@
                         "type": "object",
                         "properties": {
                             "type": {
-                                "const": "http_proxy"
+                                "enum": ["http", "http_proxy"]
                             },
                             "server": {
                                 "type": "string",
