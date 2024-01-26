@@ -101,7 +101,6 @@
                 "type",
                 "secret",
                 "algorithm",
-                "audience",
                 "issuer"
             ]
         },
@@ -148,11 +147,7 @@
                             "query": {
                                 "type": "object"
                             }
-                        },
-                        "required": [
-                            "headers",
-                            "query"
-                        ]
+                        }
                     },
                     "variables": {
                         "type": "object"
@@ -177,9 +172,6 @@
         }
     },
     "required": [
-        "servers",
-        "cors",
-        "authorizer",
         "paths"
     ]
 }
