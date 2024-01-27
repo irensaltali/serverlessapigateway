@@ -4,6 +4,7 @@ import { setCorsHeaders } from "./cors";
 import { applyValueMapping } from "./mapping";
 import { setPoweredByHeader } from "./powered-by";
 import { pathsMatch, createProxiedRequest } from './path-ops';
+import * as responses from './responses';
 
 
 export default {
@@ -12,7 +13,7 @@ export default {
 
 		// Handle CORS preflight (OPTIONS) requests first
 		if (apiConfig.cors && request.method === 'OPTIONS' && !apiConfig.paths.find(item => item.method === 'OPTIONS' && pathsMatch(item.path, url.pathname))) {
-			return setPoweredByHeader(setCorsHeaders(new Response(null, { status: 204 })));
+			return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 })));
 		}
 
 
@@ -30,10 +31,7 @@ export default {
 			if (apiConfig.authorizer && matchedPath.auth) {
 				jwtPayload = await jwtAuth(request);
 				if (!jwtPayload.iss) {
-					return setPoweredByHeader(setCorsHeaders(new Response(
-						JSON.stringify({ message: 'Unauthorized' }),
-						{ headers: { 'Content-Type': 'application/json' }, status: 401 }
-					)));
+					return setPoweredByHeader(setCorsHeaders(request, responses.unauthorizedResponse));
 				}
 			}
 
@@ -46,16 +44,13 @@ export default {
 						console.log('Applying mapping:', matchedPath.mapping);
 						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables);
 					}
-					return fetch(modifiedRequest).then(response => setPoweredByHeader(setCorsHeaders(response)));
+					return fetch(modifiedRequest).then(response => setPoweredByHeader(setCorsHeaders(request, response)));
 				}
 			} else {
-				return setPoweredByHeader(setCorsHeaders(new Response(JSON.stringify(matchedPath.response), { headers: { 'Content-Type': 'application/json' } })));
+				return setPoweredByHeader(setCorsHeaders(request, new Response(JSON.stringify(matchedPath.response), { headers: { 'Content-Type': 'application/json' } })));
 			}
 		}
 
-		return setPoweredByHeader(setCorsHeaders(new Response(
-			JSON.stringify({ message: 'No match found.' }),
-			{ headers: { 'Content-Type': 'application/json' }, status: 404 }
-		)));
+		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse));
 	}
 };

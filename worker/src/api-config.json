@@ -4,12 +4,12 @@
     "description": "Configuration for the Serverless API Gateway",
     "servers": [
         {   
-            "alias": "ngrok",
-            "url": "https://a8ee-176-88-98-23.ngrok-free.app"
+            "alias": "serverlessapigateway-api",
+            "url": "https://api.serverlessapigateway.com"
         }
     ],
     "cors": {
-        "allow_origins": ["*"],
+        "allow_origins": ["https://api1.serverlessapigateway.com", "http://api1.serverlessapigateway.com", "https://api2.serverlessapigateway.com"],
         "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["*"],
         "expose_headers": ["*"],
@@ -29,7 +29,7 @@
             "path": "/api/v1/mapping",
             "integration": {
                 "type": "http_proxy",
-                "server": "ngrok"
+                "server": "serverlessapigateway-api"
             },
             "auth": true,
             "mapping": {
@@ -80,26 +80,26 @@
         },
         {
             "method": "GET",
-            "path": "/api/v1/ngrok",
+            "path": "/api/v1/proxy",
             "integration": {
                 "type": "http_proxy",
-                "server": "ngrok"
+                "server": "serverlessapigateway-api"
             }
         },
         {
             "method": "GET",
-            "path": "/api/v1/ngrok/{parameter}",
+            "path": "/api/v1/proxy/{parameter}",
             "integration": {
                 "type": "http_proxy",
-                "server": "ngrok"
+                "server": "serverlessapigateway-api"
             }
         },
         {
             "method": "GET",
-            "path": "/api/v1/ngrok/proxy/{.+}",
+            "path": "/api/v1/proxy/{.+}",
             "integration": {
                 "type": "http_proxy",
-                "server": "ngrok"
+                "server": "serverlessapigateway-api"
             }
         },
         {
@@ -132,10 +132,10 @@
         },
         {
             "method": "POST",
-            "path": "/api/v1/ngrok",
+            "path": "/api/v1/proxy",
             "integration": {
                 "type": "http_proxy",
-                "server": "ngrok"
+                "server": "serverlessapigateway-api"
             }
         },
         {
