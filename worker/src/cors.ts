@@ -1,11 +1,14 @@
 import apiConfig from './api-config.json';
 
-function setCorsHeaders(response: Response) {
+function setCorsHeaders(request: Request, response: Response) {
     console.log('Setting CORS headers');
     const corsConfig = apiConfig.cors;
 
+    const origin = request.headers.get('Origin');
+    const matchingOrigin = corsConfig.allow_origins.find(allowedOrigin => allowedOrigin === origin);
+
     const headers = new Headers(response.headers);
-    headers.set('Access-Control-Allow-Origin', corsConfig.allow_origins.join(','));
+    headers.set('Access-Control-Allow-Origin', matchingOrigin || corsConfig.allow_origins[0]);
     headers.set('Access-Control-Allow-Methods', corsConfig.allow_methods.join(','));
     headers.set('Access-Control-Allow-Headers', corsConfig.allow_headers.join(','));
     headers.set('Access-Control-Expose-Headers', corsConfig.expose_headers.join(','));
