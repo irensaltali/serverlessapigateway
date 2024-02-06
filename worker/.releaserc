@@ -1,6 +1,7 @@
 {
     "branches": [
-        "main", "31-add-relaese-automation-and-versioning"
+      {"name": "main", "prerelease": false},
+      {"name": "31-add-relaese-automation-and-versioning", "prerelease": false}
     ],
     "plugins": [
       "@semantic-release/commit-analyzer",
