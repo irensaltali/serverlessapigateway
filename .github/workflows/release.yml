@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 31-add-relaese-automation-and-versioning
 
 jobs:
   release:
