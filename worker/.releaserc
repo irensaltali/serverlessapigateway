@@ -9,6 +9,7 @@
         "@semantic-release/github",
         {
           "assets": [
+            {"path": "src/*"},
             {"path": "*.ts"},
             {"path": "package*"},
             {"path": "wrangler.toml"}
