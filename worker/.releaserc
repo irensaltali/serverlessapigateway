@@ -9,11 +9,12 @@
         "@semantic-release/github",
         {
           "assets": [
-            {"path": "src/*", "label": "Source code"},
+            {"path": "src/*"},
             {"path": "package*", "label": "Package"},
             {"path": "wrangler.toml", "label": "Wrangler"}
           ],
-          "addReleases": "bottom"
+          "addReleases": "bottom",
+          "successComment": false
         }
       ]
     ]
