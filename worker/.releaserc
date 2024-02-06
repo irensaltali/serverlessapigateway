@@ -1,0 +1,10 @@
+{
+    "branches": [
+        "main", "31-add-relaese-automation-and-versioning"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/github"
+    ]
+}
