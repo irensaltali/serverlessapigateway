@@ -150,6 +150,54 @@ The paths section is an array of objects where each object represents an API end
 - `variables`: Sets variables used in the endpoint.
 - `response`: Specifies the response structure for the endpoint.
 
+## Deployment
+
+You can deploy the Serverless API Gateway to Cloudflare Workers using the provided `wrangler.toml` configuration file. After setting up your configuration, you can deploy your workers using the following command:
+
+```bash
+wrangler publish
+```
+
+If you like to use GitHub actions for deployment here is is way for that. Add 'api-config.json' and 'wrangler.toml' file to your repository and add the following secrets to your repository.
+
+```
+── .githib
+│   ├── workflows
+│   │   ├── deploy-serverless-api-gateway.yml
+├── api-config.json
+└── wrangler.toml
+```
+
+deploy-serverless-api-gateway.yml
+```yaml
+name: Deploy Serverless API Gateway
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Prepare Serverless API Gateway Config for Deployment
+      uses: irensaltali/serverlessapigateway-action@v0.0.4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        configJson: './api-config.json'
+        wranglerToml: './wrangler.toml'
+        versionTag: 'v1.0.1'
+    - name: Deploy to Cloudflare Workers
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        workingDirectory: "worker"
+```
+
+
 ## Usage Guidelines
 
 - Ensure that each section of the JSON is correctly formatted according to the [schema](./worker/src/api-config.schema.json).
