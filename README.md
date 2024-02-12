@@ -1,5 +1,5 @@
 <div align="center">
-	<img  src="docs/hero.jpeg">
+	<img  src="docs/img/hero.jpeg">
     <h1> 
         <strong>Serverless API Gateway</strong>
     </h1>
@@ -220,8 +220,17 @@ A shoutout to the contributors, community members, and the maintainers of Cloudf
 
 The Serverless API Gateway is not just another API tool; it's created by developers, for developers, with the vision of making API management a breeze. Let's build together.
 
+
 ## Support
 
 I'm always happy to help with any questions or concerns you may have. Feel free to reach out to me from on [Twitter](https://twitter.com/irensaltali) or [LinkedIn](https://www.linkedin.com/in/irensaltali/).
 
 If you need a more extensive support you can always book on [Superpeer](https://superpeer.com/irensaltali/-/serverless-api-gateway)
+
+# Companies that use Serverless API Gateway
+
+<div align="center">
+	<a href="https://wope.com"> <img width="200" src="docs/img/wope.png"> </a>
+</div>
+
+Let us know if you are using Serverless API Gateway and we can add your company here.
