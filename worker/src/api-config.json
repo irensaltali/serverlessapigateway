@@ -5,7 +5,11 @@
     "servers": [
         {   
             "alias": "serverlessapigateway-api",
-            "url": "https://api.serverlessapigateway.com"
+            "url": "https://4e05-2a02-e0-665f-2400-e945-4e3-409c-d532.ngrok-free.app"
+        },
+        {   
+            "alias": "serverlessapigateway-api-sub",
+            "url": "https://4e05-2a02-e0-665f-2400-e945-4e3-409c-d532.ngrok-free.app/sub"
         }
     ],
     "cors": {
@@ -95,11 +99,27 @@
             }
         },
         {
-            "method": "GET",
+            "method": "ANY",
             "path": "/api/v1/proxy/{.+}",
             "integration": {
                 "type": "http_proxy",
                 "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/{.+}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/proxy/sub",
+            "integration": {
+                "type": "http",
+                "server": "serverlessapigateway-api-sub"
             }
         },
         {
@@ -167,6 +187,13 @@
         {
             "method": "POST",
             "path": "/api/v1/health",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/health/any",
             "response": {
                 "status": "ok"
             }
