@@ -11,19 +11,47 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
-		// Handle CORS preflight (OPTIONS) requests first
-		if (apiConfig.cors && request.method === 'OPTIONS' && !apiConfig.paths.find(item => item.method === 'OPTIONS' && pathsMatch(item.path, url.pathname))) {
-			return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 })));
+		// Handle CORS preflight (OPTIONS) requests directly
+		if (apiConfig.cors && request.method === 'OPTIONS') {
+			const matchedItem = apiConfig.paths.find(item => {
+				const matchResult = pathsMatch(item.path, url.pathname, request.method, item.method);
+				return item.method === 'OPTIONS' && matchResult?.matchedCount > 0 && matchResult.methodMatches;
+			});
+			if (!matchedItem) {
+				console.log('Handling CORS preflight request');
+				return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 })));
+			}
 		}
 
-
-		// Filter paths based on URL match and select the one with the most matched segments
+		// Adjusted filtering based on the updated pathsMatch return value
 		const matchedPaths = apiConfig.paths
-			.map(item => ({ ...item, matchLength: pathsMatch(item.path, url.pathname) }))
-			.filter(item => item.matchLength > 0);
+			.map(config => ({ ...config, matchResult: pathsMatch(config.path, url.pathname, request.method, config.method) }))
+			.filter(item => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
 
-		// Find the matched path with the most segments matching
-		const matchedPath = matchedPaths.sort((a, b) => b.matchLength - a.matchLength)[0];
+		console.log('Matched paths:', matchedPaths);
+
+		// Sorting with priority: exact matches > parameterized matches > wildcard matches
+		const matchedPath = matchedPaths.sort((a, b) => {
+			// Prioritize exact matches
+			if (a.matchResult.isExact !== b.matchResult.isExact) {
+				return a.matchResult.isExact ? -1 : 1;
+			}
+			// Among exact or parameterized matches, prioritize those with more matched segments
+			if (a.matchResult.matchedCount !== b.matchResult.matchedCount) {
+				return b.matchResult.matchedCount - a.matchResult.matchedCount;
+			}
+			// If both are parameterized, prioritize non-wildcard over wildcard
+			if (a.matchResult.isWildcard !== b.matchResult.isWildcard) {
+				return a.matchResult.isWildcard ? 1 : -1;
+			}
+			// Prioritize exact method matches over "ANY"
+			if (a.method !== b.method) {
+				if (a.method === request.method) return -1;
+				if (b.method === request.method) return 1;
+			}
+			return 0; // Equal priority
+		})[0];
+
 		console.log('Matched path:', matchedPath);
 
 		if (matchedPath) {
@@ -31,7 +59,7 @@ export default {
 			if (apiConfig.authorizer && matchedPath.auth) {
 				jwtPayload = await jwtAuth(request);
 				if (!jwtPayload.iss) {
-					return setPoweredByHeader(setCorsHeaders(request, responses.unauthorizedResponse));
+					return setPoweredByHeader(setCorsHeaders(request, responses.unauthorizedResponse()));
 				}
 			}
 
@@ -39,7 +67,7 @@ export default {
 				const server = apiConfig.servers.find(server => server.alias === matchedPath.integration.server);
 				if (server) {
 					var modifiedRequest = createProxiedRequest(request, server, matchedPath);
-					console.log('Modified request:', modifiedRequest);
+					// console.log('Modified request:', modifiedRequest);
 					if (matchedPath.mapping) {
 						console.log('Applying mapping:', matchedPath.mapping);
 						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables);
@@ -51,6 +79,6 @@ export default {
 			}
 		}
 
-		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse));
+		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse()));
 	}
 };
