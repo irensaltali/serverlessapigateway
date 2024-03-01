@@ -5,6 +5,7 @@
     </h1>
 </div>
 
+[![JWT COMPATIBLE](https://jwt.io/img/badge-compatible.svg)]()
 
 Welcome to the Serverless API Gateway, an innovative tool designed to streamline your API management tasks using the powerful capabilities of Cloudflare Workers.
 
