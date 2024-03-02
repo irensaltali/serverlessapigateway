@@ -1,5 +1,5 @@
 import apiConfig from './api-config.json';
-import { jwtAuth } from './auth';
+import { jwtAuth, AuthError } from './auth';
 import { setCorsHeaders } from "./cors";
 import { applyValueMapping } from "./mapping";
 import { setPoweredByHeader } from "./powered-by";
@@ -57,9 +57,18 @@ export default {
 		if (matchedPath) {
 			var jwtPayload = {};
 			if (apiConfig.authorizer && matchedPath.auth) {
-				jwtPayload = await jwtAuth(request);
-				if (!jwtPayload.iss) {
-					return setPoweredByHeader(setCorsHeaders(request, responses.unauthorizedResponse()));
+				try {
+					jwtPayload = await jwtAuth(request);
+				} catch (error) {
+					if (error instanceof AuthError) {
+						return setPoweredByHeader(setCorsHeaders(request, new Response(JSON.stringify({ error: error.message, code: error.code }), {
+							status: error.statusCode,
+							headers: { 'Content-Type': 'application/json' }
+						})));
+					} else {
+						console.error('Error during JWT verification:', error);
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
+					}
 				}
 			}
 
