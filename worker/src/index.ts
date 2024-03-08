@@ -79,7 +79,7 @@ export default {
 					// console.log('Modified request:', modifiedRequest);
 					if (matchedPath.mapping) {
 						console.log('Applying mapping:', matchedPath.mapping);
-						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables);
+						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables, apiConfig.variables);
 					}
 					return fetch(modifiedRequest).then(response => setPoweredByHeader(setCorsHeaders(request, response)));
 				}
