@@ -5,7 +5,7 @@
     "servers": [
         {   
             "alias": "serverlessapigateway-api",
-            "url": "https://4e05-2a02-e0-665f-2400-e945-4e3-409c-d532.ngrok-free.app"
+            "url": "https://74ec-2a02-e0-665f-2400-4803-52e0-7bcf-8789.ngrok-free.app"
         },
         {   
             "alias": "serverlessapigateway-api-sub",
@@ -27,6 +27,9 @@
         "audience": "opensourcecommunity",
         "issuer": "serverlessapigw"
     },
+    "variables": {
+        "global_variable": "global_variable_value"
+    },
     "paths": [
         {
             "method": "GET",
@@ -47,7 +50,8 @@
                     "x-config-database-url": "$config.database-url",
                     "x-config-nested-config-key": "$config.nested.config.key",
                     "x-query-userId": "$request.query.userId",
-                    "x-query-redirect_uri": "$request.query.redirect_uri"
+                    "x-query-redirect_uri": "$request.query.redirect_uri",
+                    "x-global-variable": "$config.global_variable"
                 },
                 "query": {
                     "jwt-sub": "$request.jwt.sub",
@@ -63,7 +67,8 @@
             "variables": {
                 "api_key": "API_KEY_VALUE",
                 "database-url": "sqlite://db.sqlite",
-                "nested.config.key": "nested config value" 
+                "nested.config.key": "nested config value",
+                "global_variable": "this-not-global-variable"
             }
         },
         {

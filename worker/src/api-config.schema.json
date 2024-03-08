@@ -169,6 +169,9 @@
                     "path"
                 ]
             }
+        },
+        "variables": {
+            "type": "object"
         }
     },
     "required": [
