@@ -47,7 +47,7 @@ function resolveValue(template: string, request: Request, jwtPayload: any, confi
                 case 'request.jwt':
                     return jwtPayload[match[2]] || null;
                 case 'config':
-                    return globalVariables[match[2]] || configVariables[match[2]] || null;
+                    return configVariables[match[2]] || globalVariables[match[2]] || null;
                 case 'request.query':
                     const url = new URL(request.url);
                     return url.searchParams.get(match[2]) || null;
