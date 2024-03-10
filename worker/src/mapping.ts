@@ -36,18 +36,17 @@ async function applyValueMapping(request: Request, mappingConfig: any, jwtPayloa
 
 function resolveValue(template: string, request: Request, jwtPayload: any, configVariables: any, globalVariables: any): string | null {
     try {
-
         const templateMatcher = /\$(request\.header|request\.jwt|config|request\.query)\.([a-zA-Z0-9-_.]+)/g;;
         let match = templateMatcher.exec(template);
 
         if (match) {
             switch (match[1]) {
                 case 'request.header':
-                    return request.headers.get(match[2]) || null;
+                    return (request && request.headers && request.headers.hasOwnProperty(match[2])) ? request.headers.get(match[2]) : null;
                 case 'request.jwt':
-                    return jwtPayload[match[2]] || null;
+                    return (jwtPayload && jwtPayload.hasOwnProperty(match[2])) ? jwtPayload[match[2]] : null;
                 case 'config':
-                    return configVariables[match[2]] || globalVariables[match[2]] || null;
+                    return (configVariables && configVariables.hasOwnProperty(match[2])) ? configVariables[match[2]] : (globalVariables && globalVariables.hasOwnProperty(match[2])) ? globalVariables[match[2]] : null;
                 case 'request.query':
                     const url = new URL(request.url);
                     return url.searchParams.get(match[2]) || null;
