@@ -51,6 +51,12 @@ If you need a more extensive support you can always book on [Superpeer](https://
 Let us know if you are using Serverless API Gateway and we can add your company here.
 
 # Contributors
+
 <a href="https://github.com/irensaltali/serverlessapigateway/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=irensaltali/serverlessapigateway" />
 </a>
+
+
+# Feeback Survey
+
+Please take a few minutes to fill out the [feedback survey](https://r39ra55b0sl.typeform.com/to/ex8HMyTH) to help us improve the Serverless API Gateway.
