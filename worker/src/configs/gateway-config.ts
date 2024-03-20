@@ -5,21 +5,21 @@ import { IntegrationTypeEnum } from '../enums/integration-type';
  * Configuration for the Serverless API Gateway
  */
 export interface APIGatewayConfig {
-	servers?: ServerConfig[];
-	cors?: CorsConfig;
-	authorizer?: AuthorizorConfig;
+	servers?: Server[];
+	cors?: Cors;
+	authorizer?: Authorizor;
 	paths: PathConfig[];
 	variables?: {
 		[k: string]: string;
 	};
 }
 
-export interface ServerConfig {
+export interface Server {
 	alias: string;
 	url: string;
 }
 
-export interface CorsConfig {
+export interface Cors {
 	allow_origins: string[];
 	allow_methods: HttpMethod[];
 	allow_headers: string[];
@@ -28,7 +28,7 @@ export interface CorsConfig {
 	max_age: number;
 }
 
-export interface AuthorizorConfig {
+export interface Authorizor {
 	type: 'jwt';
 	secret: string;
 	algorithm: 'HS256';
@@ -45,16 +45,10 @@ export interface PathConfig {
 	};
 	auth?: boolean;
 	mapping?: {
-		headers?: {
-			[key: string]: string;
-		};
-		query?: {
-			[key: string]: any;
-		};
+		headers?: Record<string, string>;
+		query?: Record<string, any>;
 	};
-	variables?: {
-		[key: string]: string;
-	};
+	variables?: Record<string, any>;
 	response?:
 		| {
 				status?: string;
