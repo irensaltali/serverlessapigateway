@@ -3,9 +3,10 @@ import { jwtAuth, AuthError } from './auth';
 import { setCorsHeaders } from './cors';
 import { applyValueMapping } from './mapping';
 import { setPoweredByHeader } from './powered-by';
-import { PathOperator, createProxiedRequest } from './path-ops';
+import { PathOperator } from './path-ops';
 import * as responses from './responses';
 import { APIGatewayConfig } from './configs/gateway-config';
+import { createProxiedRequest } from './requests';
 
 export default {
 	async fetch(request: Request): Promise<Response> {
