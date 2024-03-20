@@ -9,9 +9,7 @@ export interface APIGatewayConfig {
 	cors?: Cors;
 	authorizer?: Authorizor;
 	paths: PathConfig[];
-	variables?: {
-		[k: string]: string;
-	};
+	variables?: Record<string, any>;
 }
 
 export interface Server {
