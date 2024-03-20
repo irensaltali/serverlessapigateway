@@ -1,12 +1,12 @@
 import _apiConfig from './api-config.json';
 import { jwtAuth, AuthError } from './auth';
 import { setCorsHeaders } from './cors';
-import { applyValueMapping } from './mapping';
 import { setPoweredByHeader } from './powered-by';
 import { PathOperator } from './path-ops';
 import * as responses from './responses';
 import { APIGatewayConfig } from './configs/gateway-config';
 import { createProxiedRequest } from './requests';
+import { ValueMapper } from './mapping';
 
 export default {
 	async fetch(request: Request): Promise<Response> {
@@ -89,13 +89,13 @@ export default {
 					// console.log('Modified request:', modifiedRequest);
 					if (matchedPath.config.mapping) {
 						console.log('Applying mapping:', matchedPath.config.mapping);
-						modifiedRequest = await applyValueMapping(
-							modifiedRequest,
-							matchedPath.config.mapping,
+						modifiedRequest = await ValueMapper.modify({
+							request: modifiedRequest,
+							mappingConfig: matchedPath.config.mapping,
 							jwtPayload,
-							matchedPath.config.variables,
-							apiConfig.variables,
-						);
+							configVariables: matchedPath.config.variables,
+							globalVariables: apiConfig.variables,
+						});
 					}
 					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response)));
 				}
