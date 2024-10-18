@@ -172,3 +172,14 @@ dist
 .wrangler/
 
 .DS_Store
+
+
+# Exclude dev files
+
+.dev/*
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
