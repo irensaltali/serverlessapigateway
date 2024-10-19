@@ -1,21 +1,24 @@
-import apiConfig from './api-config.json';
+import _apiConfig from './api-config.json';
 import { jwtAuth, AuthError } from './auth';
-import { setCorsHeaders } from "./cors";
-import { applyValueMapping } from "./mapping";
-import { setPoweredByHeader } from "./powered-by";
-import { pathsMatch, createProxiedRequest } from './path-ops';
+import { setCorsHeaders } from './cors';
+import { setPoweredByHeader } from './powered-by';
+import { PathOperator } from './path-ops';
 import * as responses from './responses';
-
+import { APIGatewayConfig } from './configs/gateway-config';
+import { createProxiedRequest } from './requests';
+import { ValueMapper } from './mapping';
 
 export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+	async fetch(request: Request): Promise<Response> {
 		const url = new URL(request.url);
+
+		const apiConfig = _apiConfig as APIGatewayConfig;
 
 		// Handle CORS preflight (OPTIONS) requests directly
 		if (apiConfig.cors && request.method === 'OPTIONS') {
-			const matchedItem = apiConfig.paths.find(item => {
-				const matchResult = pathsMatch(item.path, url.pathname, request.method, item.method);
-				return item.method === 'OPTIONS' && matchResult?.matchedCount > 0 && matchResult.methodMatches;
+			const matchedItem = apiConfig.paths.find((item) => {
+				const matchResult = PathOperator.match(item.path, url.pathname, request.method, item.method);
+				return item.method === 'OPTIONS' && matchResult.matchedCount > 0 && matchResult.methodMatches;
 			});
 			if (!matchedItem) {
 				console.log('Handling CORS preflight request');
@@ -25,8 +28,8 @@ export default {
 
 		// Adjusted filtering based on the updated pathsMatch return value
 		const matchedPaths = apiConfig.paths
-			.map(config => ({ ...config, matchResult: pathsMatch(config.path, url.pathname, request.method, config.method) }))
-			.filter(item => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
+			.map((config) => ({ config, matchResult: PathOperator.match(config.path, url.pathname, request.method, config.method) }))
+			.filter((item) => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
 
 		console.log('Matched paths:', matchedPaths);
 
@@ -45,9 +48,9 @@ export default {
 				return a.matchResult.isWildcard ? 1 : -1;
 			}
 			// Prioritize exact method matches over "ANY"
-			if (a.method !== b.method) {
-				if (a.method === request.method) return -1;
-				if (b.method === request.method) return 1;
+			if (a.config.method !== b.config.method) {
+				if (a.config.method === request.method) return -1;
+				if (b.config.method === request.method) return 1;
 			}
 			return 0; // Equal priority
 		})[0];
@@ -55,16 +58,21 @@ export default {
 		console.log('Matched path:', matchedPath);
 
 		if (matchedPath) {
-			var jwtPayload = {};
-			if (apiConfig.authorizer && matchedPath.auth) {
+			let jwtPayload = {};
+			if (apiConfig.authorizer && matchedPath.config.auth) {
 				try {
 					jwtPayload = await jwtAuth(request);
 				} catch (error) {
 					if (error instanceof AuthError) {
-						return setPoweredByHeader(setCorsHeaders(request, new Response(JSON.stringify({ error: error.message, code: error.code }), {
-							status: error.statusCode,
-							headers: { 'Content-Type': 'application/json' }
-						})));
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(JSON.stringify({ error: error.message, code: error.code }), {
+									status: error.statusCode,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+							),
+						);
 					} else {
 						console.error('Error during JWT verification:', error);
 						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
@@ -72,22 +80,35 @@ export default {
 				}
 			}
 
-			if (matchedPath.integration && matchedPath.integration.type.includes('http')) {
-				const server = apiConfig.servers.find(server => server.alias === matchedPath.integration.server);
+			if (matchedPath.config.integration && matchedPath.config.integration.type.includes('http')) {
+				const server =
+					apiConfig.servers &&
+					apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
 				if (server) {
-					var modifiedRequest = createProxiedRequest(request, server, matchedPath);
+					let modifiedRequest = createProxiedRequest(request, server, matchedPath.config);
 					// console.log('Modified request:', modifiedRequest);
-					if (matchedPath.mapping) {
-						console.log('Applying mapping:', matchedPath.mapping);
-						modifiedRequest = await applyValueMapping(modifiedRequest, matchedPath.mapping, jwtPayload, matchedPath.variables, apiConfig.variables);
+					if (matchedPath.config.mapping) {
+						console.log('Applying mapping:', matchedPath.config.mapping);
+						modifiedRequest = await ValueMapper.modify({
+							request: modifiedRequest,
+							mappingConfig: matchedPath.config.mapping,
+							jwtPayload,
+							configVariables: matchedPath.config.variables,
+							globalVariables: apiConfig.variables,
+						});
 					}
-					return fetch(modifiedRequest).then(response => setPoweredByHeader(setCorsHeaders(request, response)));
+					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response)));
 				}
 			} else {
-				return setPoweredByHeader(setCorsHeaders(request, new Response(JSON.stringify(matchedPath.response), { headers: { 'Content-Type': 'application/json' } })));
+				return setPoweredByHeader(
+					setCorsHeaders(
+						request,
+						new Response(JSON.stringify(matchedPath.config.response), { headers: { 'Content-Type': 'application/json' } }),
+					),
+				);
 			}
 		}
 
 		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse()));
-	}
+	},
 };
