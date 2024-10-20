@@ -24,6 +24,24 @@
                 ]
             }
         },
+        "services": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "alias": {
+                        "type": "string"
+                    },
+                    "entrypoint": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "alias",
+                    "entrypoint"
+                ]
+            }
+        },
         "cors": {
             "type": "object",
             "properties": {
@@ -47,7 +65,15 @@
                     "uniqueItems": true,
                     "items": {
                         "type": "string",
-                        "enum": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "*"]
+                        "enum": [
+                            "GET",
+                            "POST",
+                            "PUT",
+                            "DELETE",
+                            "OPTIONS",
+                            "PATCH",
+                            "*"
+                        ]
                     }
                 },
                 "allow_headers": {
@@ -110,7 +136,15 @@
                 "type": "object",
                 "properties": {
                     "method": {
-                        "enum": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "ANY"]
+                        "enum": [
+                            "GET",
+                            "POST",
+                            "PUT",
+                            "DELETE",
+                            "OPTIONS",
+                            "PATCH",
+                            "ANY"
+                        ]
                     },
                     "path": {
                         "type": "string",
@@ -120,16 +154,22 @@
                         "type": "object",
                         "properties": {
                             "type": {
-                                "enum": ["http", "http_proxy"]
+                                "enum": [
+                                    "http",
+                                    "http_proxy",
+                                    "service"
+                                ]
                             },
                             "server": {
                                 "type": "string",
                                 "$ref": "#/properties/servers/items/properties/alias"
+                            },
+                            "service": {
+                                "type": "string"
                             }
                         },
                         "required": [
-                            "type",
-                            "server"
+                            "type"
                         ]
                     },
                     "auth": {
@@ -172,9 +212,19 @@
         },
         "variables": {
             "type": "object"
+        },
+        "newProperty1": {
+            "type": "string",
+            "description": "Description for newProperty1"
+        },
+        "newProperty2": {
+            "type": "integer",
+            "description": "Description for newProperty2"
         }
     },
     "required": [
-        "paths"
+        "paths",
+        "newProperty1",
+        "newProperty2"
     ]
 }

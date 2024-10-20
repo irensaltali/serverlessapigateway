@@ -6,10 +6,16 @@ import { IntegrationTypeEnum } from '../enums/integration-type';
  */
 export interface APIGatewayConfig {
 	servers?: Server[];
+	services?: Service[];
 	cors?: Cors;
 	authorizer?: Authorizor;
 	paths: PathConfig[];
 	variables?: Record<string, any>;
+}
+
+export interface Service {
+	alias: string;
+	entrypoint: string;
 }
 
 export interface Server {
@@ -40,6 +46,7 @@ export interface PathConfig {
 	integration?: {
 		type: IntegrationTypeEnum;
 		server: string;
+		binding: string;
 	};
 	auth?: boolean;
 	mapping?: {

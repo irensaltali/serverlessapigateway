@@ -7,9 +7,11 @@ import * as responses from './responses';
 import { APIGatewayConfig } from './configs/gateway-config';
 import { createProxiedRequest } from './requests';
 import { ValueMapper } from './mapping';
+import { IntegrationTypeEnum } from './enums/integration-type';
+
 
 export default {
-	async fetch(request: Request): Promise<Response> {
+	async fetch(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
 		const apiConfig = _apiConfig as APIGatewayConfig;
@@ -80,7 +82,7 @@ export default {
 				}
 			}
 
-			if (matchedPath.config.integration && matchedPath.config.integration.type.includes('http')) {
+			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP) {
 				const server =
 					apiConfig.servers &&
 					apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
@@ -99,7 +101,20 @@ export default {
 					}
 					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response)));
 				}
-			} else {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE) {
+				const service =
+					apiConfig.services &&
+					apiConfig.services.find((service) => matchedPath.config.integration && service.alias === matchedPath.config.integration.binding);
+
+				if (service) {
+					const module = await import(service.entrypoint);
+					const Service = module.default;
+					const serviceInstance = new Service();
+					console.log('Service instance:', serviceInstance);
+					return serviceInstance.fetch(request, env, ctx);
+				}
+			}
+			else {
 				return setPoweredByHeader(
 					setCorsHeaders(
 						request,
