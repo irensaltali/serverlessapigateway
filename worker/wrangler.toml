@@ -1,5 +1,5 @@
 name = "serverlessapigw"
-main = "src/index.ts"
+main = "src/index.js"
 compatibility_date = "2024-01-17"
 
 # Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
@@ -49,3 +49,8 @@ compatibility_date = "2024-01-17"
 # [[migrations]]
 # tag = "v1"
 # new_classes = ["MyDurableObject"]
+
+find_additional_modules = true
+rules = [
+    { type = "ESModule", globs = ["services/*.js"]}
+]

@@ -1,23 +1,16 @@
-export interface MatchedPath {
-	matchedCount: number;
-	isExact: boolean;
-	isWildcard: boolean;
-	methodMatches: boolean;
-}
-
 export class PathOperator {
 	// Function to check if a segment is a path parameter
-	private static isParam(segment: string): boolean {
+	static isParam(segment) {
 		return segment.startsWith('{') && segment.endsWith('}');
 	}
 
 	// Function to check if the segment is a wildcard
-	private static isWildcard(segment: string): boolean {
+	static isWildcard(segment) {
 		return segment === '{.+}';
 	}
 
 	// Function to match the paths and return the count of matched segments
-	static match(configPath: string, requestPath: string, requestMethod: string, configMethod: string): MatchedPath {
+	static match(configPath, requestPath, requestMethod, configMethod) {
 		const configSegments = configPath.split('/');
 		const requestSegments = requestPath.split('/');
 		let matchedSegments = 0;
