@@ -1,4 +1,4 @@
-import { JWTPayload, jwtVerify, errors } from 'jose';
+import {jwtVerify, errors } from 'jose';
 import apiConfig from './api-config.json';
 
 // Define a custom error type for clearer error handling
