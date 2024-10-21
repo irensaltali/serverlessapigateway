@@ -1,11 +1,9 @@
-import { JWTPayload, jwtVerify, errors } from 'jose';
+import {jwtVerify, errors } from 'jose';
 import apiConfig from './api-config.json';
 
 // Define a custom error type for clearer error handling
 class AuthError extends Error {
-	statusCode: number;
-	code: string;
-	constructor(message: string, code: string, statusCode: number) {
+	constructor(message, code, statusCode) {
 		super(message);
 		this.name = 'AuthError';
 		this.code = code;
@@ -13,7 +11,7 @@ class AuthError extends Error {
 	}
 }
 
-async function jwtAuth(request: Request): Promise<JWTPayload> {
+async function jwtAuth(request) {
 	const secret = new TextEncoder().encode(apiConfig.authorizer?.secret);
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
