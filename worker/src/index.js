@@ -1,20 +1,19 @@
-import _apiConfig from './api-config.json';
-import { jwtAuth, AuthError } from './auth';
-import { setCorsHeaders } from './cors';
-import { setPoweredByHeader } from './powered-by';
-import { PathOperator } from './path-ops';
-import * as responses from './responses';
-import { APIGatewayConfig } from './configs/gateway-config';
-import { createProxiedRequest } from './requests';
-import { ValueMapper } from './mapping';
-import { IntegrationTypeEnum } from './enums/integration-type';
+const _apiConfig = await import('./api-config.json')
+const { jwtAuth, AuthError } = await import('./auth');
+const { setCorsHeaders } = await import('./cors');
+const { setPoweredByHeader } = await import('./powered-by');
+const { PathOperator } = await import('./path-ops');
+const responses = await import('./responses');
+const { createProxiedRequest } = await import('./requests');
+const { ValueMapper } = await import('./mapping');
+const { IntegrationTypeEnum } = await import('./enums/integration-type');
 
 
 export default {
-	async fetch(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
+	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
 
-		const apiConfig = _apiConfig as APIGatewayConfig;
+		const apiConfig = _apiConfig;
 
 		// Handle CORS preflight (OPTIONS) requests directly
 		if (apiConfig.cors && request.method === 'OPTIONS') {
@@ -33,7 +32,7 @@ export default {
 			.map((config) => ({ config, matchResult: PathOperator.match(config.path, url.pathname, request.method, config.method) }))
 			.filter((item) => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
 
-		console.log('Matched paths:', matchedPaths);
+		//console.log('Matched paths:', matchedPaths);
 
 		// Sorting with priority: exact matches > parameterized matches > wildcard matches
 		const matchedPath = matchedPaths.sort((a, b) => {
@@ -57,7 +56,7 @@ export default {
 			return 0; // Equal priority
 		})[0];
 
-		console.log('Matched path:', matchedPath);
+		//console.log('Matched path:', matchedPath);
 
 		if (matchedPath) {
 			let jwtPayload = {};
@@ -81,8 +80,8 @@ export default {
 					}
 				}
 			}
-
-			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP) {
+			console.log(IntegrationTypeEnum);
+			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['HTTP_PROXY']) {
 				const server =
 					apiConfig.servers &&
 					apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
@@ -101,16 +100,15 @@ export default {
 					}
 					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response)));
 				}
-			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE']) {
 				const service =
 					apiConfig.services &&
 					apiConfig.services.find((service) => matchedPath.config.integration && service.alias === matchedPath.config.integration.binding);
 
 				if (service) {
-					const module = await import(service.entrypoint);
+					const module = await import(`${service.entrypoint}.js`);
 					const Service = module.default;
 					const serviceInstance = new Service();
-					console.log('Service instance:', serviceInstance);
 					return serviceInstance.fetch(request, env, ctx);
 				}
 			}

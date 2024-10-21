@@ -1,13 +1,5 @@
-export interface ValueMapperRequest {
-	request: Request;
-	mappingConfig: any;
-	jwtPayload: any;
-	configVariables: any;
-	globalVariables: any;
-}
-
 export class ValueMapper {
-	public static async modify(incoming: ValueMapperRequest): Promise<Request> {
+	static async modify(incoming) {
 		let newRequest = incoming.request.clone();
 		const url = new URL(newRequest.url);
 		const searchParams = new URLSearchParams(url.searchParams);
@@ -54,13 +46,13 @@ export class ValueMapper {
 
 		return newRequest;
 	}
-	private static resolveValue(
-		template: string,
-		request: Request,
-		jwtPayload: any,
-		configVariables: any,
-		globalVariables: any,
-	): string | null {
+	static resolveValue(
+		template,
+		request,
+		jwtPayload,
+		configVariables,
+		globalVariables,
+	) {
 		try {
 			const templateMatcher = /\$(request\.header|request\.jwt|config|request\.query)\.([a-zA-Z0-9-_.]+)/g;
 			const match = templateMatcher.exec(template);

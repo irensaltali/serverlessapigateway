@@ -1,6 +1,6 @@
 import apiConfig from './api-config.json';
 
-function setCorsHeaders(request: Request, response: Response) {
+function setCorsHeaders(request, response) {
 	console.log('Setting CORS headers');
 	const corsConfig = apiConfig.cors;
 

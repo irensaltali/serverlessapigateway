@@ -1,4 +1,4 @@
-function setPoweredByHeader(response: Response) {
+function setPoweredByHeader(response) {
 	const headers = new Headers(response.headers);
 	headers.set('X-Powered-By', 'github.com/irensaltali/serverlessapigateway');
 
