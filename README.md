@@ -15,6 +15,7 @@ Welcome to the Serverless API Gateway, an innovative tool designed to streamline
 - **Routing (Path and Method)**: Simplify your API architecture with flexible path and method-based routing for directing traffic to the appropriate endpoints.
 - **CORS (Basic)**: Manage cross-origin resource sharing settings with ease, ensuring your APIs can securely handle requests from different origins.
 - **Auth (JWT)**: Secure your APIs by implementing JSON Web Token (JWT) based authentication to validate and manage user access efficiently.
+- **Service Binding**: Bind your API to a service as Workers, so you can use the Workers capabilities within your API.
 - **Value Mapping**: Map values from sources to destinations, allowing you to easily transform your data.
 
 ## Motivation
