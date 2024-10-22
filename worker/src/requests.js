@@ -1,7 +1,5 @@
-import { PathConfig as Path, Server } from './configs/gateway-config';
-
 // Function to create a new request based on the matched path and server
-function createProxiedRequest(request: Request, server: Server, matchedPath: Path): Request {
+function createProxiedRequest(request, server, matchedPath) {
 	const requestUrl = new URL(request.url);
 	let newPath = '';
 
