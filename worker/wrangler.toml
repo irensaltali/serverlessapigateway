@@ -54,3 +54,7 @@ find_additional_modules = true
 rules = [
     { type = "ESModule", globs = ["services/*.js"]}
 ]
+
+[observability]
+enabled = true
+head_sampling_rate = 0.3
