@@ -108,7 +108,7 @@
             "type": "object",
             "properties": {
                 "type": {
-                    "const": "jwt"
+                    "enum": ["jwt", "auth0"]
                 },
                 "secret": {
                     "type": "string"
@@ -124,10 +124,7 @@
                 }
             },
             "required": [
-                "type",
-                "secret",
-                "algorithm",
-                "issuer"
+                "type"
             ]
         },
         "paths": {
@@ -157,7 +154,8 @@
                                 "enum": [
                                     "http",
                                     "http_proxy",
-                                    "service"
+                                    "service",
+                                    "auth0_callback"
                                 ]
                             },
                             "server": {
