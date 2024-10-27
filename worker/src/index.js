@@ -7,6 +7,7 @@ const responses = await import('./responses');
 const { createProxiedRequest } = await import('./requests');
 const { ValueMapper } = await import('./mapping');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
+const { auth0CallbackHandler } = await import('./integrations/auth0');
 
 
 export default {
@@ -113,14 +114,10 @@ export default {
 				}
 			}
 			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
-				const module = await import('./integrations/auth0/callback.js');
-				const Service = module.default;
-				const serviceInstance = new Service();
-
 				const urlParams = new URLSearchParams(url.search);
 				const code = urlParams.get('code');
-				
-				return serviceInstance.auth0CallbackHandler(code);
+
+				return auth0CallbackHandler(code);
 			}
 			else {
 				return setPoweredByHeader(

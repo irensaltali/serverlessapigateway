@@ -1,7 +1,6 @@
-import apiConfig from '../../api-config.json';
+import apiConfig from '../api-config.json';
 
-export default class Service {
-    async auth0CallbackHandler(code) {
+async function auth0CallbackHandler(code) {
         const { domain, client_id, client_secret } = apiConfig.authorizer;
 
         const tokenUrl = `https://${domain}/oauth/token`;
@@ -52,4 +51,5 @@ export default class Service {
             });
         }
     }
-}
+
+export { auth0CallbackHandler };
