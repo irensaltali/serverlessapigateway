@@ -1,5 +1,6 @@
 import { jwtVerify, createLocalJWKSet, createRemoteJWKSet, errors } from 'jose';
 import apiConfig from '../api-config.json';
+import { AuthError } from "../types/error_types";
 
 async function auth0CallbackHandler(jwt) {
     const { domain, client_id, client_secret } = apiConfig.authorizer;
@@ -53,13 +54,19 @@ async function auth0CallbackHandler(jwt) {
     }
 }
 
-async function validateAccessToken(jwt) {
+async function validateIdToken(jwt) {
     const { domain, jwks, jwks_uri } = apiConfig.authorizer;
+    const authHeader = request.headers.get('Authorization');
+	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+		throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
+	}
+	const jwt = authHeader.split(' ')[1];
 
     try {
+        // Extract the JWT from the Authorization header
         jwt = jwt.split(' ')[1];
         
-        // Extract the public key from the JWKS
+        // Create a JWK Set from the JWKS endpoint or the JWKS data
         let JWKS;
         if (jwks) {
             const jwksData = JSON.parse(jwks);
@@ -110,4 +117,4 @@ async function validateAccessToken(jwt) {
     }
 }
 
-export { auth0CallbackHandler, validateAccessToken };
+export { auth0CallbackHandler, validateIdToken as validateAccessToken };

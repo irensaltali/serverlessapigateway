@@ -1,11 +1,12 @@
-const _apiConfig = await import('./api-config.json')
-const { jwtAuth, AuthError } = await import('./auth');
-const { setCorsHeaders } = await import('./cors');
-const { setPoweredByHeader } = await import('./powered-by');
-const { PathOperator } = await import('./path-ops');
+const { jwtAuth } = await import('./auth');
 const responses = await import('./responses');
-const { createProxiedRequest } = await import('./requests');
 const { ValueMapper } = await import('./mapping');
+const { setCorsHeaders } = await import('./cors');
+const { PathOperator } = await import('./path-ops');
+const _apiConfig = await import('./api-config.json')
+const { AuthError } = await import('../types/error_types');
+const { setPoweredByHeader } = await import('./powered-by');
+const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
 const { auth0CallbackHandler, validateAccessToken } = await import('./integrations/auth0');
 
@@ -61,6 +62,8 @@ export default {
 
 		if (matchedPath) {
 			let jwtPayload = {};
+
+			// Check if the matched path requires authorization
 			if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'jwt') {
 				try {
 					jwtPayload = await jwtAuth(request);
@@ -83,8 +86,7 @@ export default {
 			}
 			else if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'auth0') {
 				try {
-					const token = request.headers.get('Authorization');
-					await validateAccessToken(token);
+					await validateAccessToken(request);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
