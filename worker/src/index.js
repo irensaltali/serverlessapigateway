@@ -7,7 +7,7 @@ const responses = await import('./responses');
 const { createProxiedRequest } = await import('./requests');
 const { ValueMapper } = await import('./mapping');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
-const { auth0CallbackHandler } = await import('./integrations/auth0');
+const { auth0CallbackHandler, validateAccessToken } = await import('./integrations/auth0');
 
 
 export default {
@@ -61,7 +61,7 @@ export default {
 
 		if (matchedPath) {
 			let jwtPayload = {};
-			if (apiConfig.authorizer && matchedPath.config.auth) {
+			if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'jwt') {
 				try {
 					jwtPayload = await jwtAuth(request);
 				} catch (error) {
@@ -81,7 +81,28 @@ export default {
 					}
 				}
 			}
-			console.log(IntegrationTypeEnum);
+			else if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'auth0') {
+				try {
+					const token = request.headers.get('Authorization');
+					await validateAccessToken(token);
+				} catch (error) {
+					if (error instanceof AuthError) {
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(JSON.stringify({ error: error.message, code: error.code }), {
+									status: error.statusCode,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+							),
+						);
+					} else {
+						console.error('Error during JWT verification:', error);
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
+					}
+				}
+			}
+
 			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['HTTP_PROXY']) {
 				const server =
 					apiConfig.servers &&
