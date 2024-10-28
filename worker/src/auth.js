@@ -16,11 +16,8 @@ async function jwtAuth(request) {
 			audience: apiConfig.authorizer?.audience,
 		});
 
-		console.log('JWT verification successful:', payload, protectedHeader);
-
 		return payload;
 	} catch (error) {
-		console.error('JWT verification failed:', error);
 		if (error instanceof errors.JOSEAlgNotAllowed) {
 			throw new AuthError('Algorithm not allowed', error.code, 401);
 		} else if (error instanceof errors.JWEDecryptionFailed) {

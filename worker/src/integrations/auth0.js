@@ -2,7 +2,7 @@ import { jwtVerify, createLocalJWKSet, createRemoteJWKSet, errors } from 'jose';
 import apiConfig from '../api-config.json';
 import { AuthError } from "../types/error_types";
 
-async function auth0CallbackHandler(jwt) {
+async function auth0CallbackHandler(code) {
     const { domain, client_id, client_secret } = apiConfig.authorizer;
 
     const tokenUrl = `https://${domain}/oauth/token`;
@@ -26,7 +26,6 @@ async function auth0CallbackHandler(jwt) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Failed to fetch token:', errorData);
             return new Response(JSON.stringify({
                 error: 'Failed to fetch token',
                 details: errorData
@@ -37,13 +36,11 @@ async function auth0CallbackHandler(jwt) {
         }
 
         const data = await response.json();
-        console.log('auth0CallbackHandler data', data);
         return new Response(JSON.stringify(data), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (error) {
-        console.error('Error in auth0CallbackHandler:', error);
         return new Response(JSON.stringify({
             error: 'Internal Server Error',
             message: error.message
@@ -64,22 +61,21 @@ async function validateIdToken(request) {
 
     try {
         // Create a JWK Set from the JWKS endpoint or the JWKS data
-        let JWKS;
+        let jwksSet;
         if (jwks) {
             const jwksData = JSON.parse(jwks);
-            JWKS = createLocalJWKSet(jwksData);
+            jwksSet = createLocalJWKSet(jwksData);
         }
         else if (jwks_uri) {
-            JWKS = createRemoteJWKSet(new URL(jwks_uri));
+            jwksSet = createRemoteJWKSet(new URL(jwks_uri));
         }
 
-        const { payload, protectedHeader } = await jwtVerify(jwt, JWKS, {
+        const { payload, protectedHeader } = await jwtVerify(jwt, jwksSet, {
             issuer: `https://${domain}/`,
         });
         return jwt;
     } catch (error) {
         // Handle token validation errors
-        console.error('JWT verification failed:', error);
         if (error instanceof errors.JOSEAlgNotAllowed) {
             throw new AuthError('Algorithm not allowed', error.code, 401);
         } else if (error instanceof errors.JWEDecryptionFailed) {
@@ -117,7 +113,6 @@ async function getProfile(accessToken) {
 
     const userinfourl = `https://${domain}/userinfo`;
 
-
     try {
         const response = await fetch(userinfourl, {
             method: 'GET',
@@ -128,7 +123,6 @@ async function getProfile(accessToken) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Failed to fetch token:', errorData);
             return new Response(JSON.stringify({
                 error: 'Failed to fetch token',
                 details: errorData
@@ -139,7 +133,6 @@ async function getProfile(accessToken) {
         }
 
         const data = await response.json();
-        console.log('getProfile data', data);
         return new Response(JSON.stringify(data), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }

@@ -24,7 +24,6 @@ export default {
 				return item.method === 'OPTIONS' && matchResult.matchedCount > 0 && matchResult.methodMatches;
 			});
 			if (!matchedItem) {
-				console.log('Handling CORS preflight request');
 				return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 })));
 			}
 		}
@@ -33,8 +32,6 @@ export default {
 		const matchedPaths = apiConfig.paths
 			.map((config) => ({ config, matchResult: PathOperator.match(config.path, url.pathname, request.method, config.method) }))
 			.filter((item) => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
-
-		//console.log('Matched paths:', matchedPaths);
 
 		// Sorting with priority: exact matches > parameterized matches > wildcard matches
 		const matchedPath = matchedPaths.sort((a, b) => {
@@ -58,8 +55,6 @@ export default {
 			return 0; // Equal priority
 		})[0];
 
-		//console.log('Matched path:', matchedPath);
-
 		if (matchedPath) {
 			let jwtPayload = {};
 
@@ -79,7 +74,6 @@ export default {
 							),
 						);
 					} else {
-						console.error('Error during JWT verification:', error);
 						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
 					}
 				}
@@ -99,7 +93,6 @@ export default {
 							),
 						);
 					} else {
-						console.error('Error during JWT verification:', error);
 						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
 					}
 				}
@@ -111,9 +104,7 @@ export default {
 					apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
 				if (server) {
 					let modifiedRequest = createProxiedRequest(request, server, matchedPath.config);
-					// console.log('Modified request:', modifiedRequest);
 					if (matchedPath.config.mapping) {
-						console.log('Applying mapping:', matchedPath.config.mapping);
 						modifiedRequest = await ValueMapper.modify({
 							request: modifiedRequest,
 							mappingConfig: matchedPath.config.mapping,
@@ -144,10 +135,9 @@ export default {
 			}
 			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
 				const urlParams = new URLSearchParams(url.search);
-				console.log('urlParams:', urlParams);
-				const access_token = urlParams.get('access_token');
+				const accessToken = urlParams.get('access_token');
 
-				return getProfile(access_token);
+				return getProfile(accessToken);
 			}
 			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
 				const urlParams = new URLSearchParams(url.search);
