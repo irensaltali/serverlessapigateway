@@ -105,126 +105,184 @@
             ]
         },
         "authorizer": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "const": "jwt"
-                },
-                "secret": {
-                    "type": "string"
-                },
-                "algorithm": {
-                    "const": "HS256"
-                },
-                "audience": {
-                    "type": "string"
-                },
-                "issuer": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "type",
-                "secret",
-                "algorithm",
-                "issuer"
-            ]
-        },
-        "paths": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "method": {
-                        "enum": [
-                            "GET",
-                            "POST",
-                            "PUT",
-                            "DELETE",
-                            "OPTIONS",
-                            "PATCH",
-                            "ANY"
-                        ]
-                    },
-                    "path": {
-                        "type": "string",
-                        "format": "pathStart"
-                    },
-                    "integration": {
-                        "type": "object",
-                        "properties": {
-                            "type": {
-                                "enum": [
-                                    "http",
-                                    "http_proxy",
-                                    "service"
-                                ]
-                            },
-                            "server": {
-                                "type": "string",
-                                "$ref": "#/properties/servers/items/properties/alias"
-                            },
-                            "service": {
-                                "type": "string"
-                            }
+            "oneOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "const": "jwt"
                         },
-                        "required": [
-                            "type"
-                        ]
-                    },
-                    "auth": {
-                        "type": [
-                            "boolean",
-                            "null"
-                        ]
-                    },
-                    "mapping": {
-                        "type": "object",
-                        "properties": {
-                            "headers": {
-                                "type": "object"
-                            },
-                            "query": {
-                                "type": "object"
-                            }
+                        "secret": {
+                            "type": "string"
+                        },
+                        "algorithm": {
+                            "const": "HS256"
+                        },
+                        "audience": {
+                            "type": "string"
+                        },
+                        "issuer": {
+                            "type": "string"
                         }
                     },
-                    "variables": {
-                        "type": "object"
+                    "required": [
+                        "type",
+                        "secret",
+                        "algorithm",
+                        "audience",
+                        "issuer"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "const": "auth0"
+                        },
+                        "domain": {
+                            "type": "string"
+                        },
+                        "client_id": {
+                            "type": "string"
+                        },
+                        "client_secret": {
+                            "type": "string"
+                        },
+                        "secret": {
+                            "type": "string"
+                        },
+                        "redirect_uri": {
+                            "type": "string"
+                        },
+                        "jwks": {
+                            "type": "string"
+                        },
+                        "jwks_uri": {
+                            "type": "string"
+                        },
+                        "scope": {
+                            "type": "string"
+                        }
                     },
-                    "response": {
-                        "type": [
-                            "object",
-                            "string"
-                        ],
-                        "properties": {
-                            "status": {
-                                "type": "string"
-                            }
+                    "required": [
+                        "type",
+                        "domain",
+                        "client_id",
+                        "client_secret",
+                        "secret",
+                        "redirect_uri",
+                        "scope"
+                    ],
+                    "anyOf": [
+                        {
+                            "required": ["jwks"]
+                        },
+                        {
+                            "required": ["jwks_uri"]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "paths": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS",
+                        "PATCH",
+                        "ANY"
+                    ]
+                },
+                "path": {
+                    "type": "string",
+                    "format": "pathStart"
+                },
+                "integration": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "http",
+                                "http_proxy",
+                                "service",
+                                "auth0_callback",
+                                "auth0_userinfo",
+                                "auth0_callback_redirect"
+                            ]
+                        },
+                        "server": {
+                            "type": "string",
+                            "$ref": "#/properties/servers/items/properties/alias"
+                        },
+                        "service": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                },
+                "auth": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "mapping": {
+                    "type": "object",
+                    "properties": {
+                        "headers": {
+                            "type": "object"
+                        },
+                        "query": {
+                            "type": "object"
                         }
                     }
                 },
-                "required": [
-                    "method",
-                    "path"
-                ]
-            }
-        },
-        "variables": {
-            "type": "object"
-        },
-        "newProperty1": {
-            "type": "string",
-            "description": "Description for newProperty1"
-        },
-        "newProperty2": {
-            "type": "integer",
-            "description": "Description for newProperty2"
+                "variables": {
+                    "type": "object"
+                },
+                "response": {
+                    "type": [
+                        "object",
+                        "string"
+                    ],
+                    "properties": {
+                        "status": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "required": [
+                "method",
+                "path"
+            ]
         }
     },
-    "required": [
-        "paths",
-        "newProperty1",
-        "newProperty2"
-    ]
+    "variables": {
+        "type": "object"
+    },
+    "newProperty1": {
+        "type": "string",
+        "description": "Description for newProperty1"
+    },
+    "newProperty2": {
+        "type": "integer",
+        "description": "Description for newProperty2"
+    }
+},
+"required": [
+    "paths",
+    "newProperty1",
+    "newProperty2"
+]
 }

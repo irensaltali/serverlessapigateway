@@ -1,15 +1,6 @@
 import {jwtVerify, errors } from 'jose';
 import apiConfig from './api-config.json';
-
-// Define a custom error type for clearer error handling
-class AuthError extends Error {
-	constructor(message, code, statusCode) {
-		super(message);
-		this.name = 'AuthError';
-		this.code = code;
-		this.statusCode = statusCode;
-	}
-}
+import { AuthError } from "./types/error_types";
 
 async function jwtAuth(request) {
 	const secret = new TextEncoder().encode(apiConfig.authorizer?.secret);
@@ -25,11 +16,8 @@ async function jwtAuth(request) {
 			audience: apiConfig.authorizer?.audience,
 		});
 
-		console.log('JWT verification successful:', payload, protectedHeader);
-
 		return payload;
 	} catch (error) {
-		console.error('JWT verification failed:', error);
 		if (error instanceof errors.JOSEAlgNotAllowed) {
 			throw new AuthError('Algorithm not allowed', error.code, 401);
 		} else if (error instanceof errors.JWEDecryptionFailed) {

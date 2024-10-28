@@ -1,12 +1,14 @@
-const _apiConfig = await import('./api-config.json')
-const { jwtAuth, AuthError } = await import('./auth');
-const { setCorsHeaders } = await import('./cors');
-const { setPoweredByHeader } = await import('./powered-by');
-const { PathOperator } = await import('./path-ops');
+const { jwtAuth } = await import('./auth');
 const responses = await import('./responses');
-const { createProxiedRequest } = await import('./requests');
 const { ValueMapper } = await import('./mapping');
+const { setCorsHeaders } = await import('./cors');
+const { PathOperator } = await import('./path-ops');
+const _apiConfig = await import('./api-config.json')
+const { AuthError } = await import('./types/error_types');
+const { setPoweredByHeader } = await import('./powered-by');
+const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
+const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin } = await import('./integrations/auth0');
 
 
 export default {
@@ -22,7 +24,6 @@ export default {
 				return item.method === 'OPTIONS' && matchResult.matchedCount > 0 && matchResult.methodMatches;
 			});
 			if (!matchedItem) {
-				console.log('Handling CORS preflight request');
 				return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 })));
 			}
 		}
@@ -31,8 +32,6 @@ export default {
 		const matchedPaths = apiConfig.paths
 			.map((config) => ({ config, matchResult: PathOperator.match(config.path, url.pathname, request.method, config.method) }))
 			.filter((item) => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
-
-		//console.log('Matched paths:', matchedPaths);
 
 		// Sorting with priority: exact matches > parameterized matches > wildcard matches
 		const matchedPath = matchedPaths.sort((a, b) => {
@@ -56,11 +55,11 @@ export default {
 			return 0; // Equal priority
 		})[0];
 
-		//console.log('Matched path:', matchedPath);
-
 		if (matchedPath) {
 			let jwtPayload = {};
-			if (apiConfig.authorizer && matchedPath.config.auth) {
+
+			// Check if the matched path requires authorization
+			if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'jwt') {
 				try {
 					jwtPayload = await jwtAuth(request);
 				} catch (error) {
@@ -75,21 +74,37 @@ export default {
 							),
 						);
 					} else {
-						console.error('Error during JWT verification:', error);
 						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
 					}
 				}
 			}
-			console.log(IntegrationTypeEnum);
+			else if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'auth0') {
+				try {
+					await validateIdToken(request);
+				} catch (error) {
+					if (error instanceof AuthError) {
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(JSON.stringify({ error: error.message, code: error.code }), {
+									status: error.statusCode,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+							),
+						);
+					} else {
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
+					}
+				}
+			}
+
 			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['HTTP_PROXY']) {
 				const server =
 					apiConfig.servers &&
 					apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
 				if (server) {
 					let modifiedRequest = createProxiedRequest(request, server, matchedPath.config);
-					// console.log('Modified request:', modifiedRequest);
 					if (matchedPath.config.mapping) {
-						console.log('Applying mapping:', matchedPath.config.mapping);
 						modifiedRequest = await ValueMapper.modify({
 							request: modifiedRequest,
 							mappingConfig: matchedPath.config.mapping,
@@ -111,6 +126,22 @@ export default {
 					const serviceInstance = new Service();
 					return serviceInstance.fetch(request, env, ctx);
 				}
+			}
+			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
+				const urlParams = new URLSearchParams(url.search);
+				const code = urlParams.get('code');
+
+				return auth0CallbackHandler(code);
+			}
+			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
+				const urlParams = new URLSearchParams(url.search);
+				const accessToken = urlParams.get('access_token');
+
+				return getProfile(accessToken);
+			}
+			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
+				const urlParams = new URLSearchParams(url.search);
+				return redirectToLogin({ state: urlParams.get('state') });
 			}
 			else {
 				return setPoweredByHeader(
