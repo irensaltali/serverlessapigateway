@@ -6,3 +6,5 @@ class AuthError extends Error {
 		this.statusCode = statusCode;
 	}
 }
+
+export { AuthError }; // Ensure AuthError is exported

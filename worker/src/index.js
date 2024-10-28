@@ -4,11 +4,11 @@ const { ValueMapper } = await import('./mapping');
 const { setCorsHeaders } = await import('./cors');
 const { PathOperator } = await import('./path-ops');
 const _apiConfig = await import('./api-config.json')
-const { AuthError } = await import('../types/error_types');
+const { AuthError } = await import('./types/error_types');
 const { setPoweredByHeader } = await import('./powered-by');
 const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
-const { auth0CallbackHandler, validateAccessToken } = await import('./integrations/auth0');
+const { auth0CallbackHandler, validateIdToken, getProfile } = await import('./integrations/auth0');
 
 
 export default {
@@ -86,7 +86,7 @@ export default {
 			}
 			else if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'auth0') {
 				try {
-					await validateAccessToken(request);
+					await validateIdToken(request);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
@@ -141,6 +141,13 @@ export default {
 				const code = urlParams.get('code');
 
 				return auth0CallbackHandler(code);
+			}
+			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
+				const urlParams = new URLSearchParams(url.search);
+				console.log('urlParams:', urlParams);
+				const access_token = urlParams.get('access_token');
+
+				return getProfile(access_token);
 			}
 			else {
 				return setPoweredByHeader(

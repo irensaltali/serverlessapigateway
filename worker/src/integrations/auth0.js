@@ -54,18 +54,15 @@ async function auth0CallbackHandler(jwt) {
     }
 }
 
-async function validateIdToken(jwt) {
+async function validateIdToken(request) {
     const { domain, jwks, jwks_uri } = apiConfig.authorizer;
     const authHeader = request.headers.get('Authorization');
-	if (!authHeader || !authHeader.startsWith('Bearer ')) {
-		throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
-	}
-	const jwt = authHeader.split(' ')[1];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
+    }
+    const jwt = authHeader.split(' ')[1];
 
     try {
-        // Extract the JWT from the Authorization header
-        jwt = jwt.split(' ')[1];
-        
         // Create a JWK Set from the JWKS endpoint or the JWKS data
         let JWKS;
         if (jwks) {
@@ -78,9 +75,7 @@ async function validateIdToken(jwt) {
 
         const { payload, protectedHeader } = await jwtVerify(jwt, JWKS, {
             issuer: `https://${domain}/`,
-        })
-        console.log('validateAccessToken payload', payload);
-        console.log('validateAccessToken protectedHeader', protectedHeader);
+        });
         return jwt;
     } catch (error) {
         // Handle token validation errors
@@ -117,4 +112,47 @@ async function validateIdToken(jwt) {
     }
 }
 
-export { auth0CallbackHandler, validateIdToken as validateAccessToken };
+async function getProfile(accessToken) {
+    const { domain } = apiConfig.authorizer;
+
+    const userinfourl = `https://${domain}/userinfo`;
+
+
+    try {
+        const response = await fetch(userinfourl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Failed to fetch token:', errorData);
+            return new Response(JSON.stringify({
+                error: 'Failed to fetch token',
+                details: errorData
+            }), {
+                status: response.status,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        const data = await response.json();
+        console.log('getProfile data', data);
+        return new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        return new Response(JSON.stringify({
+            error: 'Internal Server Error',
+            message: error.message
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}
+
+export { auth0CallbackHandler, validateIdToken, getProfile };

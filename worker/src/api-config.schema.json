@@ -155,7 +155,8 @@
                                     "http",
                                     "http_proxy",
                                     "service",
-                                    "auth0_callback"
+                                    "auth0_callback",
+                                    "auth0_userinfo"
                                 ]
                             },
                             "server": {
