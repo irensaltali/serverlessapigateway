@@ -155,4 +155,10 @@ async function getProfile(accessToken) {
     }
 }
 
-export { auth0CallbackHandler, validateIdToken, getProfile };
+async function redirectToLogin(params) {
+    const { domain, client_id, redirect_uri, scope } = apiConfig.authorizer;
+    const loginUrl = `https://${domain}/authorize?response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${params.state}`;
+    return Response.redirect(loginUrl, 302);
+}
+
+export { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin };

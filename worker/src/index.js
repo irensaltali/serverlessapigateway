@@ -8,7 +8,7 @@ const { AuthError } = await import('./types/error_types');
 const { setPoweredByHeader } = await import('./powered-by');
 const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
-const { auth0CallbackHandler, validateIdToken, getProfile } = await import('./integrations/auth0');
+const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin } = await import('./integrations/auth0');
 
 
 export default {
@@ -148,6 +148,10 @@ export default {
 				const access_token = urlParams.get('access_token');
 
 				return getProfile(access_token);
+			}
+			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
+				const urlParams = new URLSearchParams(url.search);
+				return redirectToLogin({ state: urlParams.get('state') });
 			}
 			else {
 				return setPoweredByHeader(
