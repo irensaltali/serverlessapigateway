@@ -1,5 +1,5 @@
 <div align="center">
-	<img  src="docs/img/hero.jpeg">
+	<img  src="docs/img/hero.jpg">
     <h1> 
         <strong>Serverless API Gateway</strong>
     </h1>
