@@ -2,8 +2,7 @@
   "branches": [
     {
       "name": "main",
-      "prerelease": false,
-      "tagFormat": "v${version}"
+      "prerelease": false
     }
   ],
   "plugins": [
