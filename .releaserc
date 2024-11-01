@@ -10,7 +10,7 @@
         {
           "assets": [
             {"path": "src/*"},
-            {"path": "*.ts"},
+            {"path": "*.js"},
             {"path": "package*"},
             {"path": "wrangler.toml"}
           ],
