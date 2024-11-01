@@ -176,10 +176,12 @@ dist
 
 # Exclude dev files
 
-.dev/*
+.dev/
 .env
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
 
+# Ignore services_by_link folder
+services_by_link/
