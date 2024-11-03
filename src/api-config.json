@@ -3,11 +3,11 @@
     "title": "API Gateway Config",
     "description": "Configuration for the Serverless API Gateway",
     "servers": [
-        {   
+        {
             "alias": "serverlessapigateway-api",
             "url": "https://74ec-2a02-e0-665f-2400-4803-52e0-7bcf-8789.ngrok-free.app"
         },
-        {   
+        {
             "alias": "serverlessapigateway-api-sub",
             "url": "https://4e05-2a02-e0-665f-2400-e945-4e3-409c-d532.ngrok-free.app/sub"
         }
@@ -18,11 +18,31 @@
             "entrypoint": "./services/endpoint1"
         }
     ],
+    "serviceBindings": [
+        {
+            "alias": "userendpoint",
+            "binding": "USER_SERVICE"
+        }
+    ],
     "cors": {
-        "allow_origins": ["https://api1.serverlessapigateway.com", "http://api1.serverlessapigateway.com", "https://api2.serverlessapigateway.com"],
-        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["*"],
-        "expose_headers": ["*"],
+        "allow_origins": [
+            "https://api1.serverlessapigateway.com",
+            "http://api1.serverlessapigateway.com",
+            "https://api2.serverlessapigateway.com"
+        ],
+        "allow_methods": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS"
+        ],
+        "allow_headers": [
+            "*"
+        ],
+        "expose_headers": [
+            "*"
+        ],
         "allow_credentials": true,
         "max_age": 3600
     },
@@ -216,6 +236,16 @@
                 "type": "service",
                 "binding": "endpoint1"
             }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/user",
+            "integration": {
+                "type": "service_binding",
+                "binding": "userendpoint",
+                "function": "fetch"
+            },
+            "auth": false
         }
     ]
 }
