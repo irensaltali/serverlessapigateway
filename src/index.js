@@ -124,7 +124,17 @@ export default {
 					const module = await import(`${service.entrypoint}.js`);
 					const Service = module.default;
 					const serviceInstance = new Service();
-					return serviceInstance.fetch(request, env, ctx);
+					const response = serviceInstance.fetch(request, env, ctx);
+					return setPoweredByHeader(setCorsHeaders(request, response));
+				}
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE_BINDING']) {
+				const service =
+					apiConfig.serviceBinding &&
+					apiConfig.serviceBinding.find((serviceBinding) => matchedPath.config.integration && serviceBinding.alias === matchedPath.config.integration.binding);
+
+				if (service) {
+					const response = await env[service.binding][matchedPath.config.integration.function](request, env, ctx);
+					return setPoweredByHeader(setCorsHeaders(request, response));
 				}
 			}
 			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
