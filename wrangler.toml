@@ -7,6 +7,10 @@ rules = [
     { type = "ESModule", globs = ["services/*.js"]}
 ]
 
+kv_namespaces =[
+  { binding="CONFIG", id="", preview_id = " "}
+]
+
 services = [
   { binding = "USER_SERVICE", service = "user_service" }
 ]
