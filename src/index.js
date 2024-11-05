@@ -14,7 +14,21 @@ export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
 
-		const apiConfig = await env.CONFIG.get("api-config.json");
+		let apiConfig;
+		try {
+			apiConfig = await env.CONFIG.get("api-config.json");
+			if (!apiConfig) {
+				throw new Error("KV value not found");
+			}
+		} catch (error) {
+			console.warn("KV value not found, falling back to local file");
+			try {
+				apiConfig = await import('./api-config.json');
+			} catch (localError) {
+				console.error("Local config file not found");
+				return setPoweredByHeader(request, responses.configIsMissingResponse());
+			}
+		}
 
 		// Handle CORS preflight (OPTIONS) requests directly
 		if (apiConfig.cors && request.method === 'OPTIONS') {
@@ -60,7 +74,7 @@ export default {
 			// Check if the matched path requires authorization
 			if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'jwt') {
 				try {
-					jwtPayload = await jwtAuth(request);
+					jwtPayload = await jwtAuth(request, apiConfig);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
@@ -142,7 +156,7 @@ export default {
 				const urlParams = new URLSearchParams(url.search);
 				const code = urlParams.get('code');
 
-				return auth0CallbackHandler(code);
+				return auth0CallbackHandler(code, apiConfig);
 			}
 			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
 				const urlParams = new URLSearchParams(url.search);
