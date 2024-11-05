@@ -3,7 +3,6 @@ const responses = await import('./responses');
 const { ValueMapper } = await import('./mapping');
 const { setCorsHeaders } = await import('./cors');
 const { PathOperator } = await import('./path-ops');
-const _apiConfig = await import('./api-config.json')
 const { AuthError } = await import('./types/error_types');
 const { setPoweredByHeader } = await import('./powered-by');
 const { createProxiedRequest } = await import('./requests');
@@ -15,7 +14,7 @@ export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
 
-		const apiConfig = _apiConfig;
+		const apiConfig = await env.CONFIG.get("api-config.json");
 
 		// Handle CORS preflight (OPTIONS) requests directly
 		if (apiConfig.cors && request.method === 'OPTIONS') {
@@ -24,7 +23,7 @@ export default {
 				return item.method === 'OPTIONS' && matchResult.matchedCount > 0 && matchResult.methodMatches;
 			});
 			if (!matchedItem) {
-				return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 })));
+				return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 }), apiConfig.cors));
 			}
 		}
 
@@ -71,10 +70,11 @@ export default {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
+								apiConfig.cors
 							),
 						);
 					} else {
-						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), apiConfig.cors));
 					}
 				}
 			}
@@ -90,10 +90,11 @@ export default {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
+								apiConfig.cors
 							),
 						);
 					} else {
-						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse()));
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), apiConfig.cors));
 					}
 				}
 			}
@@ -113,7 +114,7 @@ export default {
 							globalVariables: apiConfig.variables,
 						});
 					}
-					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response)));
+					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response, apiConfig.cors)));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE']) {
 				const service =
@@ -125,7 +126,7 @@ export default {
 					const Service = module.default;
 					const serviceInstance = new Service();
 					const response = serviceInstance.fetch(request, env, ctx);
-					return setPoweredByHeader(setCorsHeaders(request, response));
+					return setPoweredByHeader(setCorsHeaders(request, response, apiConfig.cors));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE_BINDING']) {
 				const service =
@@ -134,7 +135,7 @@ export default {
 
 				if (service) {
 					const response = await env[service.binding][matchedPath.config.integration.function](request, env, ctx);
-					return setPoweredByHeader(setCorsHeaders(request, response));
+					return setPoweredByHeader(setCorsHeaders(request, response, apiConfig.cors));
 				}
 			}
 			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
@@ -158,11 +159,12 @@ export default {
 					setCorsHeaders(
 						request,
 						new Response(JSON.stringify(matchedPath.config.response), { headers: { 'Content-Type': 'application/json' } }),
+						apiConfig.cors
 					),
 				);
 			}
 		}
 
-		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse()));
+		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse(), apiConfig.cors));
 	},
 };

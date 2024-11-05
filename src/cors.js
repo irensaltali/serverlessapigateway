@@ -1,8 +1,4 @@
-import apiConfig from './api-config.json';
-
-function setCorsHeaders(request, response) {
-	const corsConfig = apiConfig.cors;
-
+async function setCorsHeaders(request, response, corsConfig) {
 	const origin = request.headers.get('Origin');
 	const matchingOrigin = corsConfig.allow_origins.find((allowedOrigin) => allowedOrigin === origin);
 
