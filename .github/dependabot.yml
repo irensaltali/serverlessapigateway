@@ -1,0 +1,8 @@
+version: 2
+updates:
+  - package-ecosystem: "npm" # or "yarn" if you are using Yarn
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "fix" # You can customize the commit message prefix
