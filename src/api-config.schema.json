@@ -169,6 +169,9 @@
                         "redirect_uri": {
                             "type": "string"
                         },
+                        "callback_uri": {
+                            "type": "string"
+                        },
                         "jwks": {
                             "type": "string"
                         },
@@ -185,6 +188,7 @@
                         "client_id",
                         "client_secret",
                         "redirect_uri",
+                        "callback_uri",
                         "scope"
                     ],
                     "anyOf": [

@@ -39,9 +39,10 @@
         "domain": "$env.AUTH0_DOMAIN",
         "client_id": "$env.AUTH0_CLIENT_ID",
         "client_secret": "$secret.AUTH0_CLIENT_SECRET",
-        "redirect_uri": "https://api-test.serverlessapi.com/api/v1/auth0/callback",
+        "redirect_uri": "https://api-test.xx.com/api/v1/auth0/callback",
+        "callback_uri": "https://api-test.xx.com/api/v1/auth0/callback-redirect",
         "jwks": "$secret.AUTH0_JWKS",
-        "jwks_uri": "https://serverlessapi.us.auth0.com/.well-known/jwks.json",
+        "jwks_uri": "https://xx.us.auth0.com/.well-known/jwks.json",
         "scope": "openid profile email"
     },
     "variables": {

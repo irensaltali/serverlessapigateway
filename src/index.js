@@ -93,7 +93,7 @@ export default {
 			}
 			else if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'auth0') {
 				try {
-					await validateIdToken(request);
+					await validateIdToken(request, apiConfig.authorizer);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
@@ -154,15 +154,15 @@ export default {
 				const urlParams = new URLSearchParams(url.search);
 				const code = urlParams.get('code');
 
-				return auth0CallbackHandler(code, apiConfig);
+				return auth0CallbackHandler(code, apiConfig.authorizer);
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
 				const urlParams = new URLSearchParams(url.search);
 				const accessToken = urlParams.get('access_token');
 
-				return getProfile(accessToken);
+				return getProfile(accessToken, apiConfig.authorizer);
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
 				const urlParams = new URLSearchParams(url.search);
-				return redirectToLogin({ state: urlParams.get('state') });
+				return redirectToLogin({ state: urlParams.get('state') }, apiConfig.authorizer);
 			} else {
 				return setPoweredByHeader(
 					setCorsHeaders(
