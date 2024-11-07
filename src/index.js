@@ -16,18 +16,14 @@ export default {
 
 		let apiConfig;
 		try {
-			apiConfig = await env.CONFIG.get("api-config.json");
-			if (!apiConfig) {
-				throw new Error("KV value not found");
-			}
-		} catch (error) {
-			console.warn("KV value not found, falling back to local file");
-			try {
+			if (typeof env.CONFIG === 'undefined' || await env.CONFIG.get("api-config.json") === null) {
 				apiConfig = await import('./api-config.json');
-			} catch (localError) {
-				console.error("Local config file not found");
-				return setPoweredByHeader(request, responses.configIsMissingResponse());
+			} else {
+				apiConfig = JSON.parse(await env.CONFIG.get("api-config.json"));
 			}
+		} catch (e) {
+			console.error('Error loading API configuration', e);
+			return setPoweredByHeader(request, responses.configIsMissingResponse());
 		}
 
 		// Handle CORS preflight (OPTIONS) requests directly
@@ -151,24 +147,20 @@ export default {
 					const response = await env[service.binding][matchedPath.config.integration.function](request, env, ctx);
 					return setPoweredByHeader(setCorsHeaders(request, response, apiConfig.cors));
 				}
-			}
-			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
 				const urlParams = new URLSearchParams(url.search);
 				const code = urlParams.get('code');
 
 				return auth0CallbackHandler(code, apiConfig);
-			}
-			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
 				const urlParams = new URLSearchParams(url.search);
 				const accessToken = urlParams.get('access_token');
 
 				return getProfile(accessToken);
-			}
-			else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
 				const urlParams = new URLSearchParams(url.search);
 				return redirectToLogin({ state: urlParams.get('state') });
-			}
-			else {
+			} else {
 				return setPoweredByHeader(
 					setCorsHeaders(
 						request,
