@@ -1,8 +1,4 @@
 function setCorsHeaders(request, response, corsConfig) {
-	console.log('Setting CORS headers');
-	console.log('Request headers:', request);
-	console.log('Response headers:', response.headers);
-	console.log('CORS config:', corsConfig);
 	const origin = request.headers.get('Origin');
 	const matchingOrigin = corsConfig.allow_origins.find((allowedOrigin) => allowedOrigin === origin);
 
@@ -19,7 +15,6 @@ function setCorsHeaders(request, response, corsConfig) {
 		statusText: response.statusText,
 		headers: headers,
 	});
-	console.log('New response:', newResponse);
 	return newResponse;
 }
 

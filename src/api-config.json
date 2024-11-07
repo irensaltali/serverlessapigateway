@@ -1,0 +1,286 @@
+{
+    "$schema": "./api-config.schema.json",
+    "title": "API Gateway Config",
+    "description": "Configuration for the Serverless API Gateway",
+    "servers": [
+        {   
+            "alias": "serverlessapigateway-api",
+            "url": "https://74ec-2a02-e0-665f-2400-4803-52e0-7bcf-8789.ngrok-free.app"
+        },
+        {   
+            "alias": "serverlessapigateway-api-sub",
+            "url": "https://4e05-2a02-e0-665f-2400-e945-4e3-409c-d532.ngrok-free.app/sub"
+        }
+    ],
+    "services": [
+        {
+            "alias": "endpoint1",
+            "entrypoint": "./services/endpoint1"
+        },
+        {
+            "alias": "endpoint2",
+            "entrypoint": "services/endpoint2"
+        },
+        {
+            "alias": "endpoint3",
+            "entrypoint": "./endpoint3"
+        }
+    ],
+    "cors": {
+        "allow_origins": ["https://api1.serverlessapigateway.com", "http://api1.serverlessapigateway.com", "https://api2.serverlessapigateway.com"],
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["*"],
+        "expose_headers": ["*"],
+        "allow_credentials": true,
+        "max_age": 3600
+    },
+    "authorizer": {
+        "type": "auth0",
+        "domain": "serverlessapigw.us.auth0.com",
+        "client_id": "8JMTJxxrhti2Xn9j9c9oKo099foSqAo7",
+        "client_secret": "0vmVZTGrJdhnuPZpTUWpxI7Oa0YfOoJy0qqUldWHGVEX19k884siLegujCPaKiyN",
+        "secret": "0vmVZTGrJdhnuPZpTUWpxI7Oa0YfOoJy0qqUldWHGVEX19k884siLegujCPaKiyN",
+        "redirect_uri": "https://api-test.serverlessapigw.com/api/v1/auth0/callback",
+        "jwks": "{\"keys\":[{\"kty\":\"RSA\",\"use\":\"sig\",\"n\":\"5XwInt8BSrv13XEVI61UYOr7u8wwEFab-LovUc-hToS_LRs4B49rRwDEMUvIKT8iizCjYIp9c8tlcxNLS7wrZ7469ecYXyqiX5vYkyNFY28eBA1EFDbmJqZoZGAefl8vwxWn_xrk5jnAp5zVus6wU7hjAdbmJIDt2wAR02ZOVVd7v_g_GTZXv4cTS9G45BhweHhfeeWjRxtbkjCMCR4AbOifFMBQhJHMGjmjuz6YRpHHMAk6kZ0mRpqLhkK4gfbCoa-kt8_fuIBh9u3hIU22ZAFlw_8NoHVgItHIXef4h_rSHM2XQkveiFS5BUoN6qI3ZL3OymNVr0OmTOclZ1_a8w\",\"e\":\"AQAB\",\"kid\":\"0VCLTdbo8u3RCQ5zQC8K6\",\"x5t\":\"5u0FALvIucltSUjNoYG8BbnwP1k\",\"x5c\":[\"MIIDEzCCAfugAwIBAgIJS0J4cjR\/AzEnMA0GCSqGSIb3DQEBCwUAMCcxJTAjBgNVBAMTHHNlcnZlcmxlc3NhcGlndy51cy5hdXRoMC5jb20wHhcNMjQxMDIzMjAxNjA5WhcNMzgwNzAyMjAxNjA5WjAnMSUwIwYDVQQDExxzZXJ2ZXJsZXNzYXBpZ3cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5XwInt8BSrv13XEVI61UYOr7u8wwEFab+LovUc+hToS\/LRs4B49rRwDEMUvIKT8iizCjYIp9c8tlcxNLS7wrZ7469ecYXyqiX5vYkyNFY28eBA1EFDbmJqZoZGAefl8vwxWn\/xrk5jnAp5zVus6wU7hjAdbmJIDt2wAR02ZOVVd7v\/g\/GTZXv4cTS9G45BhweHhfeeWjRxtbkjCMCR4AbOifFMBQhJHMGjmjuz6YRpHHMAk6kZ0mRpqLhkK4gfbCoa+kt8\/fuIBh9u3hIU22ZAFlw\/8NoHVgItHIXef4h\/rSHM2XQkveiFS5BUoN6qI3ZL3OymNVr0OmTOclZ1\/a8wIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH\/MB0GA1UdDgQWBBQzUIiXzHFGlz+YnTOGb0lRZfdn4DAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBAFFUDNAZj++ZUe2RsMFzNROoGfehgxFapWPHr7MJUkmsq0pEyn\/kyownpau0GNAb4LLnqEu0h3fR8cT3mInlhRB1bynU9C1I+FcCLi36REslDqlxiSxQeiDr3NAm05SK+9EnaHupCuIGmJCZFAZYTUuL4b6rlWT1bxsNsPtz5xD0MBmRE2j+j5Z3H0+Jpxb9G0PG0hOrxNAT0BoxGznpdsbn9vmLqWSB1FBSmIgo0jY6eSKuAtOyUN\/Q4DcBIDB+hc7aLhXaS9+65zIkjeojj0\/wXh9gAXV7vzJo+DeSQYypF1bA4kdhHDwyKbFT9temheVZye2uPOykN1SUZRGXOm4=\"],\"alg\":\"RS256\"},{\"kty\":\"RSA\",\"use\":\"sig\",\"n\":\"s4IQwt-gZEMd-TvHYkWTG2-S7MEtAXuy19Rrm2_YgfeyKe-65BQEyq7Jn81w2YfvQipHzoE0MHVX9ms7inmZksHAt0Zfd4pqbVUlLznhm2BWubxYCXry9odIlArFrfUTgk7D0O8TNRfQLpXeAkfyQafR4gOeS0wnJmADHNRz_RN1e8fwxKkc2pTFiqNInXnsMI5BYFXT2SziverBvf-qh20ypuPV3bfRlysEV1ScTLKsXS8yf9lRp14gfH-c2SQIlWlVW-guZBnh1wMK0eGog4dsXcJUTl3EBdQM2aDaaYw6BGvXGYXfFq5IqFW30cJS33kwPwLscOmC9-DyjSBDVQ\",\"e\":\"AQAB\",\"kid\":\"Dp1sDQrc_6vaRg4wB0Oxs\",\"x5t\":\"Vv2gzeN4lSlvqg_np-Z12JLEMXs\",\"x5c\":[\"MIIDEzCCAfugAwIBAgIJav0XYGJr4V6hMA0GCSqGSIb3DQEBCwUAMCcxJTAjBgNVBAMTHHNlcnZlcmxlc3NhcGlndy51cy5hdXRoMC5jb20wHhcNMjQxMDIzMjAxNjA5WhcNMzgwNzAyMjAxNjA5WjAnMSUwIwYDVQQDExxzZXJ2ZXJsZXNzYXBpZ3cudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs4IQwt+gZEMd+TvHYkWTG2+S7MEtAXuy19Rrm2\/YgfeyKe+65BQEyq7Jn81w2YfvQipHzoE0MHVX9ms7inmZksHAt0Zfd4pqbVUlLznhm2BWubxYCXry9odIlArFrfUTgk7D0O8TNRfQLpXeAkfyQafR4gOeS0wnJmADHNRz\/RN1e8fwxKkc2pTFiqNInXnsMI5BYFXT2SziverBvf+qh20ypuPV3bfRlysEV1ScTLKsXS8yf9lRp14gfH+c2SQIlWlVW+guZBnh1wMK0eGog4dsXcJUTl3EBdQM2aDaaYw6BGvXGYXfFq5IqFW30cJS33kwPwLscOmC9+DyjSBDVQIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH\/MB0GA1UdDgQWBBTqs4eGBIdheumRmAs3oyj6+aV2ozAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACcDyy6xVgwFGc03gHa\/NVbT9uP1ieWezzUo\/puyGG86gg1FkD6ZJY7lBO73ye1+k++111XbvC2nRmZCqOhdLMXcU7ZwWpMj7Srxqk8oQpLEzV4gzMpWmFh+So3S1hB4CeVaQoVnEOfa3s4UUxHktdlRNIlCxwHGgYcmEsVjyZprXuAP9Qe19mfT27TSxqwB81MnugkE073MkwDrAxGKWemwn8mbkwaRFk8HIkwf8Xdpf5xUCDJqK\/TDEKPVZSt8sN6OWFLmaVqX9hkXBiP0E7apxDn1e9\/9QYUPt8A9HngbZSx\/4iJFlbkezLYDh7an0TI5puIuC2n0nJ1iPef71Rk=\"],\"alg\":\"RS256\"}]}",
+        "jwks_uri": "https://serverlessapigw.us.auth0.com/.well-known/jwks.json",
+        "scope": "openid profile email"
+    },
+    "variables": {
+        "global_variable": "global_variable_value"
+    },
+    "paths": [
+        {
+            "method": "GET",
+            "path": "/api/v1/mapping",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            },
+            "auth": true,
+            "mapping": {
+                "headers": {
+                    "x-jwt-sub": "$request.jwt.sub",
+                    "x-jwt-aud": "$request.jwt.aud",
+                    "x-jwt-iss": "$request.jwt.iss",
+                    "x-jwt-name": "$request.jwt.name",
+                    "x-jwt-email": "$request.jwt.email",
+                    "x-config-api-key": "$config.api_key",
+                    "x-config-database-url": "$config.database-url",
+                    "x-config-nested-config-key": "$config.nested.config.key",
+                    "x-query-userId": "$request.query.userId",
+                    "x-query-redirect_uri": "$request.query.redirect_uri",
+                    "x-global-variable": "$config.global_variable"
+                },
+                "query": {
+                    "jwt-sub": "$request.jwt.sub",
+                    "jwt-aud": "$request.jwt.aud",
+                    "jwt-iss": "$request.jwt.iss",
+                    "jwt-name": "$request.jwt.name",
+                    "jwt-email": "$request.jwt.email",
+                    "config-api-key": "$config.api_key",
+                    "config-database-url": "$config.database-url",
+                    "config-nested-config-key": "$config.nested.config.key"
+                }
+            },
+            "variables": {
+                "api_key": "API_KEY_VALUE",
+                "database-url": "sqlite://db.sqlite",
+                "nested.config.key": "nested config value",
+                "global_variable": "this-not-global-variable"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth",
+            "response": {
+                "status": "this is authenticated GET method"
+            },
+            "auth": true
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/no-auth",
+            "response": {
+                "status": "this is un-authenticated GET method"
+            },
+            "auth": false
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/proxy",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/proxy/{parameter}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/proxy/{.+}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/{.+}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/proxy/sub",
+            "integration": {
+                "type": "http",
+                "server": "serverlessapigateway-api-sub"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is GET method"
+            }
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is POST method"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is ANY method"
+            }
+        },
+        {
+            "method": "OPTIONS",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is OPTIONS method"
+            }
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/proxy",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/ready",
+            "response": {
+                "status": "ready ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/live",
+            "response": {
+                "status": "live ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/string",
+            "response": "string ok"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/health",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/health/any",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/env",
+            "response": {
+                "status": "$env.VAR_TEST_RESPONSE_TEXT"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/secret",
+            "response": {
+                "status": "$secrets.VAR_TEST_RESPONSE_TEXT_SECRET"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/endpoint1",
+            "integration": {
+                "type": "service",
+                "binding": "endpoint1"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/endpoint2",
+            "integration": {
+                "type": "service",
+                "binding": "endpoint2"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/endpoint3",
+            "integration": {
+                "type": "service",
+                "binding": "endpoint3"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth0/callback",
+            "integration": {
+                "type": "auth0_callback"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth0/profile",
+            "integration": {
+                "type": "auth0_userinfo"
+            },
+            "auth": true
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth0/callback-redirect",
+            "integration": {
+                "type": "auth0_callback_redirect"
+            },
+            "auth": false
+        }
+    ]
+}

@@ -25,6 +25,9 @@ export default {
 			console.error('Error loading API configuration', e);
 			return setPoweredByHeader(request, responses.configIsMissingResponse());
 		}
+		
+		// Replace environment variables and secrets in the API configuration
+		apiConfig = await ValueMapper.replaceEnvAndSecrets(apiConfig, env);
 
 		// Handle CORS preflight (OPTIONS) requests directly
 		if (apiConfig.cors && request.method === 'OPTIONS') {

@@ -17,6 +17,7 @@ head_sampling_rate = 0.3
 
 [vars]
 VAR_TEST_RESPONSE_TEXT = "This respose from environment"
+VAR_TEST_RESPONSE_TEXT_SECRET = "This respose from secrets"
 
 # Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
 # Note: Use secrets to store sensitive data.
