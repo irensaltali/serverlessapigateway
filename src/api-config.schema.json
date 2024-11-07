@@ -166,9 +166,6 @@
                         "client_secret": {
                             "type": "string"
                         },
-                        "secret": {
-                            "type": "string"
-                        },
                         "redirect_uri": {
                             "type": "string"
                         },
@@ -187,7 +184,6 @@
                         "domain",
                         "client_id",
                         "client_secret",
-                        "secret",
                         "redirect_uri",
                         "scope"
                     ],

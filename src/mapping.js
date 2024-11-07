@@ -16,7 +16,6 @@ export class ValueMapper {
 					incoming.configVariables,
 					incoming.globalVariables,
 				);
-				console.log(`Resolved value for ${key}: ${resolvedValue}`);
 				if (resolvedValue !== null) {
 					newHeaders.set(key, resolvedValue);
 				}
@@ -81,5 +80,42 @@ export class ValueMapper {
 		}
 
 		return null;
+	}
+
+	static async replaceEnvAndSecrets(config, env) {
+		// Helper function to recursively traverse the object
+		function traverse(obj) {
+			for (const key in obj) {
+				if (typeof obj[key] === 'object' && obj[key] !== null) {
+					// Recursively call traverse for nested objects
+					traverse(obj[key]);
+				} else if (typeof obj[key] === 'string') {
+					// Replace environment variables
+					if (obj[key].startsWith('$env.')) {
+						const varName = obj[key].substring(5); // Get the variable name
+						if (env[varName] === null) {
+							console.error(`Error: Environment variable ${varName} is null.`);
+							obj[key] = ''; // Replace with empty string
+						} else {
+							obj[key] = env[varName] !== undefined ? env[varName] : ''; // Replace or set to empty string
+						}
+					}
+					// Replace secrets
+					else if (obj[key].startsWith('$secrets.')) {
+						const secretName = obj[key].substring(9); // Get the secret name
+						if (env[secretName] === null) {
+							console.error(`Error: Secret ${secretName} is null.`);
+							obj[key] = ''; // Replace with empty string
+						} else {
+							obj[key] = env[secretName] !== undefined ? env[secretName] : ''; // Replace or set to empty string
+						}
+					}
+				}
+			}
+		}
+	
+		// Start traversing the config object
+		traverse(config);
+		return config; // Return the modified config
 	}
 }

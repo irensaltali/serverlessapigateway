@@ -7,7 +7,6 @@ function createProxiedRequest(request, server, matchedPath) {
 		// For 'http_proxy', use the original path without the matching part
 		const matchedPathPart = matchedPath.path.replace('{.+}', '');
 		newPath = requestUrl.pathname.replace(matchedPathPart, '/');
-		console.log('New path:', newPath);
 	}
 
 	// Create the new request with the updated URL

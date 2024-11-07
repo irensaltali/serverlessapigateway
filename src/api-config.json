@@ -1,0 +1,285 @@
+{
+    "$schema": "./api-config.schema.json",
+    "title": "API Gateway Config",
+    "description": "Configuration for the Serverless API Gateway",
+    "servers": [
+        {   
+            "alias": "serverlessapigateway-api",
+            "url": "https://74ec-2a02-e0-665f-2400-4803-52e0-7bcf-8789.ngrok-free.app"
+        },
+        {   
+            "alias": "serverlessapigateway-api-sub",
+            "url": "https://4e05-2a02-e0-665f-2400-e945-4e3-409c-d532.ngrok-free.app/sub"
+        }
+    ],
+    "services": [
+        {
+            "alias": "endpoint1",
+            "entrypoint": "./services/endpoint1"
+        },
+        {
+            "alias": "endpoint2",
+            "entrypoint": "services/endpoint2"
+        },
+        {
+            "alias": "endpoint3",
+            "entrypoint": "./endpoint3"
+        }
+    ],
+    "cors": {
+        "allow_origins": ["https://api1.serverlessapigateway.com", "http://api1.serverlessapigateway.com", "https://api2.serverlessapigateway.com"],
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["*"],
+        "expose_headers": ["*"],
+        "allow_credentials": true,
+        "max_age": 3600
+    },
+    "authorizer": {
+        "type": "auth0",
+        "domain": "$env.AUTH0_DOMAIN",
+        "client_id": "$env.AUTH0_CLIENT_ID",
+        "client_secret": "$secret.AUTH0_CLIENT_SECRET",
+        "redirect_uri": "https://api-test.serverlessapi.com/api/v1/auth0/callback",
+        "jwks": "$secret.AUTH0_JWKS",
+        "jwks_uri": "https://serverlessapi.us.auth0.com/.well-known/jwks.json",
+        "scope": "openid profile email"
+    },
+    "variables": {
+        "global_variable": "global_variable_value"
+    },
+    "paths": [
+        {
+            "method": "GET",
+            "path": "/api/v1/mapping",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            },
+            "auth": true,
+            "mapping": {
+                "headers": {
+                    "x-jwt-sub": "$request.jwt.sub",
+                    "x-jwt-aud": "$request.jwt.aud",
+                    "x-jwt-iss": "$request.jwt.iss",
+                    "x-jwt-name": "$request.jwt.name",
+                    "x-jwt-email": "$request.jwt.email",
+                    "x-config-api-key": "$config.api_key",
+                    "x-config-database-url": "$config.database-url",
+                    "x-config-nested-config-key": "$config.nested.config.key",
+                    "x-query-userId": "$request.query.userId",
+                    "x-query-redirect_uri": "$request.query.redirect_uri",
+                    "x-global-variable": "$config.global_variable"
+                },
+                "query": {
+                    "jwt-sub": "$request.jwt.sub",
+                    "jwt-aud": "$request.jwt.aud",
+                    "jwt-iss": "$request.jwt.iss",
+                    "jwt-name": "$request.jwt.name",
+                    "jwt-email": "$request.jwt.email",
+                    "config-api-key": "$config.api_key",
+                    "config-database-url": "$config.database-url",
+                    "config-nested-config-key": "$config.nested.config.key"
+                }
+            },
+            "variables": {
+                "api_key": "API_KEY_VALUE",
+                "database-url": "sqlite://db.sqlite",
+                "nested.config.key": "nested config value",
+                "global_variable": "this-not-global-variable"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth",
+            "response": {
+                "status": "this is authenticated GET method"
+            },
+            "auth": true
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/no-auth",
+            "response": {
+                "status": "this is un-authenticated GET method"
+            },
+            "auth": false
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/proxy",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/proxy/{parameter}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/proxy/{.+}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/{.+}",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/proxy/sub",
+            "integration": {
+                "type": "http",
+                "server": "serverlessapigateway-api-sub"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is GET method"
+            }
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is POST method"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is ANY method"
+            }
+        },
+        {
+            "method": "OPTIONS",
+            "path": "/api/v1/method",
+            "response": {
+                "status": "this is OPTIONS method"
+            }
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/proxy",
+            "integration": {
+                "type": "http_proxy",
+                "server": "serverlessapigateway-api"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/ready",
+            "response": {
+                "status": "ready ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/live",
+            "response": {
+                "status": "live ok"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health/string",
+            "response": "string ok"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/health",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/health/any",
+            "response": {
+                "status": "ok"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/env",
+            "response": {
+                "status": "$env.VAR_TEST_RESPONSE_TEXT"
+            }
+        },
+        {
+            "method": "ANY",
+            "path": "/api/v1/secret",
+            "response": {
+                "status": "$secrets.VAR_TEST_RESPONSE_TEXT_SECRET"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/endpoint1",
+            "integration": {
+                "type": "service",
+                "binding": "endpoint1"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/endpoint2",
+            "integration": {
+                "type": "service",
+                "binding": "endpoint2"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/endpoint3",
+            "integration": {
+                "type": "service",
+                "binding": "endpoint3"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth0/callback",
+            "integration": {
+                "type": "auth0_callback"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth0/profile",
+            "integration": {
+                "type": "auth0_userinfo"
+            },
+            "auth": true
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/auth0/callback-redirect",
+            "integration": {
+                "type": "auth0_callback_redirect"
+            },
+            "auth": false
+        }
+    ]
+}
