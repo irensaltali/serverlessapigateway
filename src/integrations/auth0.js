@@ -1,8 +1,7 @@
 import { jwtVerify, createLocalJWKSet, createRemoteJWKSet, errors } from 'jose';
-import apiConfig from '../api-config.json';
 import { AuthError } from "../types/error_types";
 
-async function auth0CallbackHandler(code) {
+async function auth0CallbackHandler(code, apiConfig) {
     const { domain, client_id, client_secret } = apiConfig.authorizer;
 
     const tokenUrl = `https://${domain}/oauth/token`;

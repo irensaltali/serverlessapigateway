@@ -1,8 +1,8 @@
-import apiConfig from './api-config.json';
-
-function setCorsHeaders(request, response) {
-	const corsConfig = apiConfig.cors;
-
+function setCorsHeaders(request, response, corsConfig) {
+	console.log('Setting CORS headers');
+	console.log('Request headers:', request);
+	console.log('Response headers:', response.headers);
+	console.log('CORS config:', corsConfig);
 	const origin = request.headers.get('Origin');
 	const matchingOrigin = corsConfig.allow_origins.find((allowedOrigin) => allowedOrigin === origin);
 
@@ -14,11 +14,13 @@ function setCorsHeaders(request, response) {
 	headers.set('Access-Control-Allow-Credentials', corsConfig.allow_credentials.toString());
 	headers.set('Access-Control-Max-Age', corsConfig.max_age.toString());
 
-	return new Response(response.body, {
+	const newResponse = new Response(response.body, {
 		status: response.status,
 		statusText: response.statusText,
 		headers: headers,
 	});
+	console.log('New response:', newResponse);
+	return newResponse;
 }
 
 export { setCorsHeaders };

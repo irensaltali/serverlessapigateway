@@ -1,8 +1,7 @@
 import {jwtVerify, errors } from 'jose';
-import apiConfig from './api-config.json';
 import { AuthError } from "./types/error_types";
 
-async function jwtAuth(request) {
+async function jwtAuth(request, apiConfig) {
 	const secret = new TextEncoder().encode(apiConfig.authorizer?.secret);
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
