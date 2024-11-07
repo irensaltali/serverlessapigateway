@@ -2,7 +2,7 @@ import { jwtVerify, createLocalJWKSet, createRemoteJWKSet, errors } from 'jose';
 import { AuthError } from "../types/error_types";
 
 async function auth0CallbackHandler(code, authorizer) {
-    const { domain, client_id, client_secret, redirect_code_exchange } = authorizer;
+    const { domain, client_id, client_secret, callback_uri } = authorizer;
 
     const tokenUrl = `https://${domain}/oauth/token`;
 
@@ -11,7 +11,7 @@ async function auth0CallbackHandler(code, authorizer) {
         client_id,
         client_secret,
         code,
-        redirect_uri: redirect_code_exchange
+        redirect_uri: callback_uri
     });
 
     try {

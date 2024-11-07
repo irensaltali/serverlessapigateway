@@ -169,7 +169,7 @@
                         "redirect_uri": {
                             "type": "string"
                         },
-                        "redirect_after_code_exchange": {
+                        "callback_uri": {
                             "type": "string"
                         },
                         "jwks": {
@@ -188,7 +188,7 @@
                         "client_id",
                         "client_secret",
                         "redirect_uri",
-                        "redirect_after_code_exchange",
+                        "callback_uri",
                         "scope"
                     ],
                     "anyOf": [
