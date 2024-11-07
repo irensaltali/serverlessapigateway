@@ -169,6 +169,9 @@
                         "redirect_uri": {
                             "type": "string"
                         },
+                        "redirect_after_code_exchange": {
+                            "type": "string"
+                        },
                         "jwks": {
                             "type": "string"
                         },
@@ -185,6 +188,7 @@
                         "client_id",
                         "client_secret",
                         "redirect_uri",
+                        "redirect_after_code_exchange",
                         "scope"
                     ],
                     "anyOf": [

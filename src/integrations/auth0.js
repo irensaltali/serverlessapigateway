@@ -1,8 +1,8 @@
 import { jwtVerify, createLocalJWKSet, createRemoteJWKSet, errors } from 'jose';
 import { AuthError } from "../types/error_types";
 
-async function auth0CallbackHandler(code, apiConfig) {
-    const { domain, client_id, client_secret } = apiConfig.authorizer;
+async function auth0CallbackHandler(code, authorizer) {
+    const { domain, client_id, client_secret, redirect_code_exchange } = authorizer;
 
     const tokenUrl = `https://${domain}/oauth/token`;
 
@@ -11,7 +11,7 @@ async function auth0CallbackHandler(code, apiConfig) {
         client_id,
         client_secret,
         code,
-        redirect_uri: 'https://api-test.serverlessapigw.com/api/v1/auth0/callback'
+        redirect_uri: redirect_code_exchange
     });
 
     try {
@@ -50,8 +50,8 @@ async function auth0CallbackHandler(code, apiConfig) {
     }
 }
 
-async function validateIdToken(request) {
-    const { domain, jwks, jwks_uri } = apiConfig.authorizer;
+async function validateIdToken(request, authorizer) {
+    const { domain, jwks, jwks_uri } = authorizer;
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
@@ -107,8 +107,8 @@ async function validateIdToken(request) {
     }
 }
 
-async function getProfile(accessToken) {
-    const { domain } = apiConfig.authorizer;
+async function getProfile(accessToken, authorizer) {
+    const { domain } = authorizer;
 
     const userinfourl = `https://${domain}/userinfo`;
 
@@ -147,8 +147,8 @@ async function getProfile(accessToken) {
     }
 }
 
-async function redirectToLogin(params) {
-    const { domain, client_id, redirect_uri, scope } = apiConfig.authorizer;
+async function redirectToLogin(params, authorizer) {
+    const { domain, client_id, redirect_uri, scope } = authorizer;
     const loginUrl = `https://${domain}/authorize?response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&state=${params.state}`;
     return Response.redirect(loginUrl, 302);
 }
