@@ -51,6 +51,7 @@ async function auth0CallbackHandler(code, authorizer) {
 }
 
 async function validateIdToken(request, authorizer) {
+async function validateIdToken(request, authorizer) {
     const { domain, jwks, jwks_uri } = authorizer;
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -72,7 +73,29 @@ async function validateIdToken(request, authorizer) {
         const { payload, protectedHeader } = await jwtVerify(jwt, jwksSet, {
             issuer: `https://${domain}/`,
         });
-        return jwt;
+        return { payload, protectedHeader };
+    const { domain, jwks, jwks_uri } = authorizer;
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
+    }
+    const jwt = authHeader.split(' ')[1];
+
+    try {
+        // Create a JWK Set from the JWKS endpoint or the JWKS data
+        let jwksSet;
+        if (jwks) {
+            const jwksData = JSON.parse(jwks);
+            jwksSet = createLocalJWKSet(jwksData);
+        }
+        else if (jwks_uri) {
+            jwksSet = createRemoteJWKSet(new URL(jwks_uri));
+        }
+
+        const { payload, protectedHeader } = await jwtVerify(jwt, jwksSet, {
+            issuer: `https://${domain}/`,
+        });
+    } catch (error) {
     } catch (error) {
         // Handle token validation errors
         if (error instanceof errors.JOSEAlgNotAllowed) {
