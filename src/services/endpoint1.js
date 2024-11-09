@@ -1,5 +1,5 @@
 export default class Service {
-  async fetch(request, env, ctx) {
+  async fetch(request, env, ctx, sagContext) {
     return new Response("Hello from Worker 1!", {
       headers: { "content-type": "text/plain" },
     });
