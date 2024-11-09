@@ -234,6 +234,7 @@
                                     "http",
                                     "http_proxy",
                                     "service",
+                                    "service_binding",
                                     "auth0_callback",
                                     "auth0_userinfo",
                                     "auth0_callback_redirect"
