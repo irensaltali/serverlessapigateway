@@ -12,22 +12,23 @@ const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin } = a
 
 export default {
 	async fetch(request, env, ctx) {
-		const apiConfig = this.getAPIConfig(env);
-		const url = new URL(request.url);
+		const sagContext = new ServerlessAPIGatewayContext();
+		sagContext.apiConfig = this.getsagContext.sagContext.apiConfig(env);
+		sagContext.requestUrl = new URL(request.url);
 
 		// Handle CORS preflight (OPTIONS) requests directly
-		if (apiConfig.cors && request.method === 'OPTIONS') {
-			const matchedItem = apiConfig.paths.find((item) => {
-				const matchResult = PathOperator.match(item.path, url.pathname, request.method, item.method);
+		if (sagContext.apiConfig.cors && request.method === 'OPTIONS') {
+			const matchedItem = sagContext.apiConfig.paths.find((item) => {
+				const matchResult = PathOperator.match(item.path, sagContext.requestUrl.pathname, request.method, item.method);
 				return item.method === 'OPTIONS' && matchResult.matchedCount > 0 && matchResult.methodMatches;
 			});
 			if (!matchedItem) {
-				return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 }), apiConfig.cors));
+				return setPoweredByHeader(setCorsHeaders(request, new Response(null, { status: 204 }), sagContext.apiConfig.cors));
 			}
 		}
 
 		// Adjusted filtering based on the updated pathsMatch return value
-		const matchedPaths = apiConfig.paths
+		const matchedPaths = sagContext.apiConfig.paths
 			.map((config) => ({ config, matchResult: PathOperator.match(config.path, url.pathname, request.method, config.method) }))
 			.filter((item) => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
 
@@ -54,12 +55,10 @@ export default {
 		})[0];
 
 		if (matchedPath) {
-			let jwtPayload = {};
-
 			// Check if the matched path requires authorization
-			if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'jwt') {
+			if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'jwt') {
 				try {
-					jwtPayload = await jwtAuth(request, apiConfig);
+					sagContext.jwtPayload = await jwtAuth(request, sagContext.apiConfig);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
@@ -69,17 +68,17 @@ export default {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
-								apiConfig.cors
+								sagContext.apiConfig.cors
 							),
 						);
 					} else {
-						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), apiConfig.cors));
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
 					}
 				}
 			}
-			else if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'auth0') {
+			else if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'auth0') {
 				try {
-					jwtPayload = await validateIdToken(request, apiConfig.authorizer);
+					sagContext.jwtPayload = await validateIdToken(request, sagContext.apiConfig.authorizer);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
@@ -89,81 +88,81 @@ export default {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
-								apiConfig.cors
+								sagContext.apiConfig.cors
 							),
 						);
 					} else {
-						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), apiConfig.cors));
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
 					}
 				}
 			}
 
 			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['HTTP_PROXY']) {
 				const server =
-					apiConfig.servers &&
-					apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
+					sagContext.apiConfig.servers &&
+					sagContext.apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
 				if (server) {
 					let modifiedRequest = createProxiedRequest(request, server, matchedPath.config);
 					if (matchedPath.config.mapping) {
 						modifiedRequest = await ValueMapper.modify({
 							request: modifiedRequest,
 							mappingConfig: matchedPath.config.mapping,
-							jwtPayload,
+							jwtPayload: sagContext.jwtPayload,
 							configVariables: matchedPath.config.variables,
-							globalVariables: apiConfig.variables,
+							globalVariables: sagContext.apiConfig.variables,
 						});
 					}
-					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response, apiConfig.cors)));
+					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors)));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE']) {
 				const service =
-					apiConfig.services &&
-					apiConfig.services.find((service) => matchedPath.config.integration && service.alias === matchedPath.config.integration.binding);
+					sagContext.apiConfig.services &&
+					sagContext.apiConfig.services.find((service) => matchedPath.config.integration && service.alias === matchedPath.config.integration.binding);
 
 				if (service) {
 					const module = await import(`${service.entrypoint}.js`);
 					const Service = module.default;
 					const serviceInstance = new Service();
 					const response = serviceInstance.fetch(request, env, ctx);
-					return setPoweredByHeader(setCorsHeaders(request, response, apiConfig.cors));
+					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE_BINDING']) {
 				const service =
-					apiConfig.serviceBinding &&
-					apiConfig.serviceBinding.find((serviceBinding) => matchedPath.config.integration && serviceBinding.alias === matchedPath.config.integration.binding);
+					sagContext.apiConfig.serviceBinding &&
+					sagContext.apiConfig.serviceBinding.find((serviceBinding) => matchedPath.config.integration && serviceBinding.alias === matchedPath.config.integration.binding);
 
 				if (service) {
 					const response = await env[service.binding][matchedPath.config.integration.function](request, env, ctx);
-					return setPoweredByHeader(setCorsHeaders(request, response, apiConfig.cors));
+					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
-				const urlParams = new URLSearchParams(url.search);
+				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				const code = urlParams.get('code');
 
-				return auth0CallbackHandler(code, apiConfig.authorizer);
+				return auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
-				const urlParams = new URLSearchParams(url.search);
+				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				const accessToken = urlParams.get('access_token');
 
-				return getProfile(accessToken, apiConfig.authorizer);
+				return getProfile(accessToken, sagContext.apiConfig.authorizer);
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
-				const urlParams = new URLSearchParams(url.search);
-				return redirectToLogin({ state: urlParams.get('state') }, apiConfig.authorizer);
+				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
+				return redirectToLogin({ state: urlParams.get('state') }, sagContext.apiConfig.authorizer);
 			} else {
 				return setPoweredByHeader(
 					setCorsHeaders(
 						request,
 						new Response(JSON.stringify(matchedPath.config.response), { headers: { 'Content-Type': 'application/json' } }),
-						apiConfig.cors
+						sagContext.apiConfig.cors
 					),
 				);
 			}
 		}
 
-		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse(), apiConfig.cors));
+		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse(), sagContext.apiConfig.cors));
 	},
 
-	async getAPIConfig(env) {
+	async getapiConfig(env) {
 		let apiConfig;
 		try {
 			if (typeof env.CONFIG === 'undefined' || await env.CONFIG.get("api-config.json") === null) {
