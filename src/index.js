@@ -8,12 +8,13 @@ const { setPoweredByHeader } = await import('./powered-by');
 const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
 const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin } = await import('./integrations/auth0');
+const { ServerlessAPIGatewayContext } = await import('./types/serverless_api_gateway_context');
 
 
 export default {
 	async fetch(request, env, ctx) {
 		const sagContext = new ServerlessAPIGatewayContext();
-		sagContext.apiConfig = this.getsagContext.sagContext.apiConfig(env);
+		sagContext.apiConfig = await this.getApiConfig(env);
 		sagContext.requestUrl = new URL(request.url);
 
 		// Handle CORS preflight (OPTIONS) requests directly
@@ -29,8 +30,10 @@ export default {
 
 		// Adjusted filtering based on the updated pathsMatch return value
 		const matchedPaths = sagContext.apiConfig.paths
-			.map((config) => ({ config, matchResult: PathOperator.match(config.path, url.pathname, request.method, config.method) }))
+			.map((config) => ({ config, matchResult: PathOperator.match(config.path, sagContext.requestUrl.pathname, request.method, config.method) }))
 			.filter((item) => item.matchResult.matchedCount > 0 && item.matchResult.methodMatches); // Only consider matches with the correct method
+
+
 
 		// Sorting with priority: exact matches > parameterized matches > wildcard matches
 		const matchedPath = matchedPaths.sort((a, b) => {
@@ -96,11 +99,11 @@ export default {
 					}
 				}
 			}
-
-			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['HTTP_PROXY']) {
+			
+			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY) {
 				const server =
 					sagContext.apiConfig.servers &&
-					sagContext.apiConfig.servers.find((server) => matchedPath.config.integration && server.alias === matchedPath.config.integration.server);
+					sagContext.apiConfig.servers.find((server) => server.alias === matchedPath.config.integration.server);
 				if (server) {
 					let modifiedRequest = createProxiedRequest(request, server, matchedPath.config);
 					if (matchedPath.config.mapping) {
@@ -114,10 +117,10 @@ export default {
 					}
 					return fetch(modifiedRequest).then((response) => setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors)));
 				}
-			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE) {
 				const service =
 					sagContext.apiConfig.services &&
-					sagContext.apiConfig.services.find((service) => matchedPath.config.integration && service.alias === matchedPath.config.integration.binding);
+					sagContext.apiConfig.services.find((service) => service.alias === matchedPath.config.integration.binding);
 
 				if (service) {
 					const module = await import(`${service.entrypoint}.js`);
@@ -126,26 +129,26 @@ export default {
 					const response = serviceInstance.fetch(request, env, ctx);
 					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 				}
-			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['SERVICE_BINDING']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE_BINDING) {
 				const service =
-					sagContext.apiConfig.serviceBinding &&
-					sagContext.apiConfig.serviceBinding.find((serviceBinding) => matchedPath.config.integration && serviceBinding.alias === matchedPath.config.integration.binding);
+					sagContext.apiConfig.serviceBindings &&
+					sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.integration.binding);
 
 				if (service) {
-					const response = await env[service.binding][matchedPath.config.integration.function](request, env, ctx);
+					const response = await env[service.binding][matchedPath.config.integration.function](request, env, ctx, sagContext);
 					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 				}
-			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACK']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACK) {
 				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				const code = urlParams.get('code');
 
 				return auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
-			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0USERINFO']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0USERINFO) {
 				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				const accessToken = urlParams.get('access_token');
 
 				return getProfile(accessToken, sagContext.apiConfig.authorizer);
-			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum['AUTH0CALLBACKREDIRECT']) {
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACKREDIRECT) {
 				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				return redirectToLogin({ state: urlParams.get('state') }, sagContext.apiConfig.authorizer);
 			} else {
@@ -162,7 +165,7 @@ export default {
 		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse(), sagContext.apiConfig.cors));
 	},
 
-	async getapiConfig(env) {
+	async getApiConfig(env) {
 		let apiConfig;
 		try {
 			if (typeof env.CONFIG === 'undefined' || await env.CONFIG.get("api-config.json") === null) {
@@ -174,7 +177,7 @@ export default {
 			console.error('Error loading API configuration', e);
 			return setPoweredByHeader(request, responses.configIsMissingResponse());
 		}
-		
+
 		// Replace environment variables and secrets in the API configuration
 		apiConfig = await ValueMapper.replaceEnvAndSecrets(apiConfig, env);
 
