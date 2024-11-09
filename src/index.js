@@ -93,7 +93,7 @@ export default {
 			}
 			else if (apiConfig.authorizer && matchedPath.config.auth && apiConfig.authorizer.type == 'auth0') {
 				try {
-					await validateIdToken(request, apiConfig.authorizer);
+					jwtPayload = await validateIdToken(request, apiConfig.authorizer);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(

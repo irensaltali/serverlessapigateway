@@ -72,7 +72,7 @@ async function validateIdToken(request, authorizer) {
         const { payload, protectedHeader } = await jwtVerify(jwt, jwksSet, {
             issuer: `https://${domain}/`,
         });
-        return jwt;
+        return payload;
     } catch (error) {
         // Handle token validation errors
         if (error instanceof errors.JOSEAlgNotAllowed) {
