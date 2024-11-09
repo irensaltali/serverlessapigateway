@@ -12,22 +12,8 @@ const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin } = a
 
 export default {
 	async fetch(request, env, ctx) {
+		const apiConfig = this.getAPIConfig(env);
 		const url = new URL(request.url);
-
-		let apiConfig;
-		try {
-			if (typeof env.CONFIG === 'undefined' || await env.CONFIG.get("api-config.json") === null) {
-				apiConfig = await import('./api-config.json');
-			} else {
-				apiConfig = JSON.parse(await env.CONFIG.get("api-config.json"));
-			}
-		} catch (e) {
-			console.error('Error loading API configuration', e);
-			return setPoweredByHeader(request, responses.configIsMissingResponse());
-		}
-		
-		// Replace environment variables and secrets in the API configuration
-		apiConfig = await ValueMapper.replaceEnvAndSecrets(apiConfig, env);
 
 		// Handle CORS preflight (OPTIONS) requests directly
 		if (apiConfig.cors && request.method === 'OPTIONS') {
@@ -175,5 +161,24 @@ export default {
 		}
 
 		return setPoweredByHeader(setCorsHeaders(request, responses.noMatchResponse(), apiConfig.cors));
+	},
+
+	async getAPIConfig(env) {
+		let apiConfig;
+		try {
+			if (typeof env.CONFIG === 'undefined' || await env.CONFIG.get("api-config.json") === null) {
+				apiConfig = await import('./api-config.json');
+			} else {
+				apiConfig = JSON.parse(await env.CONFIG.get("api-config.json"));
+			}
+		} catch (e) {
+			console.error('Error loading API configuration', e);
+			return setPoweredByHeader(request, responses.configIsMissingResponse());
+		}
+		
+		// Replace environment variables and secrets in the API configuration
+		apiConfig = await ValueMapper.replaceEnvAndSecrets(apiConfig, env);
+
+		return apiConfig;
 	},
 };
