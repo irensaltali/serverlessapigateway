@@ -99,7 +99,7 @@ export default {
 					}
 				}
 			}
-			
+
 			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY) {
 				const server =
 					sagContext.apiConfig.servers &&
@@ -135,7 +135,7 @@ export default {
 					sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.integration.binding);
 
 				if (service) {
-					const response = await env[service.binding][matchedPath.config.integration.function](request, env, ctx, sagContext);
+					const response = await env[service.binding][matchedPath.config.integration.function](request, JSON.stringify(env), JSON.stringify(sagContext));
 					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACK) {
