@@ -31,6 +31,8 @@ export class PathOperator {
 			return { matchedCount: 0, isExact: false, isWildcard: false, methodMatches: methodMatches };
 		}
 
+		const params = {}; // Initialize an empty object to store parameters
+
 		for (let i = 0; i < Math.max(configSegments.length, requestSegments.length); i++) {
 			if (i < configSegments.length && this.isWildcard(configSegments[i])) {
 				isWildcardUsed = true;
@@ -45,6 +47,8 @@ export class PathOperator {
 
 			if (this.isParam(configSegments[i])) {
 				isExact = false; // Found a parameterized segment, so it's not an exact match
+				const paramName = configSegments[i].slice(1, -1); // Extract the parameter name without the first and last character
+                params[paramName] = requestSegments[i]; // Store the parameter value
 				matchedSegments++;
 			} else if (configSegments[i] === requestSegments[i]) {
 				matchedSegments++; // Exact match for this segment
@@ -58,6 +62,7 @@ export class PathOperator {
 			isExact: isExact && matchedSegments === configSegments.length && matchedSegments === requestSegments.length,
 			isWildcard: isWildcardUsed,
 			methodMatches: methodMatches, // Include method match status
+			params: params, // Include the parameters in the result
 		};
 	}
 }

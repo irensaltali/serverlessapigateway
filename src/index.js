@@ -57,6 +57,8 @@ export default {
 			return 0; // Equal priority
 		})[0];
 
+		sagContext.matchedPath = matchedPath;
+
 		if (matchedPath) {
 			// Check if the matched path requires authorization
 			if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'jwt') {
