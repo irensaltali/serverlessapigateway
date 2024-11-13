@@ -100,6 +100,7 @@ export default {
 				}
 			}
 
+
 			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY) {
 				const server =
 					sagContext.apiConfig.servers &&
@@ -183,4 +184,11 @@ export default {
 
 		return apiConfig;
 	},
+
+	async rateLimitCheck(matchedPath, sagContext) {
+		if (matchedPath.config.rateLimit) {
+			const rateLimit = matchedPath.config.rateLimit;
+			//TODO: Planned rate limiting is not possible in the without durable objects
+		}
+	}
 };

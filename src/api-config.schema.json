@@ -206,6 +206,33 @@
                 }
             ]
         },
+        "global_rate_limit": {
+            "type": "object",
+            "properties": {
+                "base": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "IP",
+                            "USER"
+                        ]
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "window": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "base",
+                "limit",
+                "window"
+            ]
+        },
         "paths": {
             "type": "array",
             "items": {
@@ -282,7 +309,33 @@
                                 "type": "string"
                             }
                         }
-                    }
+                    },
+                    "rate_limit": {
+                        "type": "object",
+                        "properties": {
+                            "base": {
+                                "type": "array",
+                                "uniqueItems": true,
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "IP",
+                                        "USER"
+                                    ]
+                                }
+                            },
+                            "limit": {
+                                "type": "integer"
+                            },
+                            "window": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "base",
+                            "limit",
+                            "window"
+                        ]
                 },
                 "required": [
                     "method",

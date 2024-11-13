@@ -48,6 +48,11 @@
     "variables": {
         "global_variable": "global_variable_value"
     },
+    "global_rate_limit": {
+        "base": ["IP"],
+        "limit": 100,
+        "window": "1m"
+    },
     "paths": [
         {
             "method": "GET",
@@ -281,6 +286,31 @@
                 "type": "auth0_callback_redirect"
             },
             "auth": false
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/rate",
+            "response": {
+                "status": "ok"
+            },
+            "rate_limit": {
+                "base": ["IP"],
+                "limit": 1,
+                "window": "1s"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/rate-user",
+            "response": {
+                "status": "ok"
+            },
+            "rate_limit": {
+                "base": ["IP", "USER"],
+                "limit": 1,
+                "window": "1s"
+            },
+            "auth": true
         }
     ]
 }
