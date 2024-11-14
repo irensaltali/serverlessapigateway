@@ -1,3 +1,4 @@
+import { safeStringify } from "./common";
 const { jwtAuth } = await import('./auth');
 const responses = await import('./responses');
 const { ValueMapper } = await import('./mapping');
@@ -69,7 +70,7 @@ export default {
 						return setPoweredByHeader(
 							setCorsHeaders(
 								request,
-								new Response(JSON.stringify({ error: error.message, code: error.code }), {
+								new Response(safeStringify({ error: error.message, code: error.code }), {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
@@ -89,7 +90,7 @@ export default {
 						return setPoweredByHeader(
 							setCorsHeaders(
 								request,
-								new Response(JSON.stringify({ error: error.message, code: error.code }), {
+								new Response(safeStringify({ error: error.message, code: error.code }), {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
@@ -137,14 +138,54 @@ export default {
 					sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.integration.binding);
 
 				if (service) {
-					const response = await env[service.binding][matchedPath.config.integration.function](request, JSON.stringify(env), JSON.stringify(sagContext));
+					const response = await env[service.binding][matchedPath.config.integration.function](request, safeStringify(env), safeStringify(sagContext));
 					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACK) {
-				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
-				const code = urlParams.get('code');
+				try {
+					const urlParams = new URLSearchParams(sagContext.requestUrl.search);
+					const code = urlParams.get('code');
 
-				return auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
+					const payload = await auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
+
+					// Post-process logic
+					if (matchedPath.config.integration.post_process) {
+						const postProcessConfig = matchedPath.config.integration.post_process;
+						if (postProcessConfig.type === 'service_binding') {
+							const postProcessService = sagContext.apiConfig.serviceBindings.find(
+								(serviceBinding) => serviceBinding.alias === postProcessConfig.binding
+							);
+							if (postProcessService) {
+								await env[postProcessService.binding][postProcessConfig.function](payload, safeStringify(env), safeStringify(sagContext));
+							}
+						}
+					}
+
+
+
+
+					return setPoweredByHeader(setCorsHeaders(
+						request,
+						new Response(safeStringify(payload), {
+							status: 200,
+							headers: { 'Content-Type': 'application/json' },
+						}),
+						sagContext.apiConfig.cors
+					));
+				} catch (error) {
+					if (error instanceof AuthError) {
+						return setPoweredByHeader(setCorsHeaders(
+							request,
+							new Response(safeStringify({ error: error.message, code: error.code }), {
+								status: error.statusCode,
+								headers: { 'Content-Type': 'application/json' },
+							}),
+							sagContext.apiConfig.cors
+						));
+					} else {
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
+					}
+				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0USERINFO) {
 				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				const accessToken = urlParams.get('access_token');
@@ -157,7 +198,7 @@ export default {
 				return setPoweredByHeader(
 					setCorsHeaders(
 						request,
-						new Response(JSON.stringify(matchedPath.config.response), { headers: { 'Content-Type': 'application/json' } }),
+						new Response(safeStringify(matchedPath.config.response), { headers: { 'Content-Type': 'application/json' } }),
 						sagContext.apiConfig.cors
 					),
 				);
