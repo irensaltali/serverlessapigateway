@@ -84,7 +84,7 @@ export default {
 			}
 			else if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'auth0') {
 				try {
-					sagContext.jwtPayload = await validateIdToken(request, sagContext.apiConfig.authorizer);
+					sagContext.jwtPayload = await validateIdToken(request, null, sagContext.apiConfig.authorizer);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
@@ -146,7 +146,8 @@ export default {
 					const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 					const code = urlParams.get('code');
 
-					const payload = await auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
+					const jwt = await auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
+					sagContext.jwtPayload = await validateIdToken(null, jwt.id_token, sagContext.apiConfig.authorizer);
 
 					// Post-process logic
 					if (matchedPath.config.integration.post_process) {
@@ -156,23 +157,21 @@ export default {
 								(serviceBinding) => serviceBinding.alias === postProcessConfig.binding
 							);
 							if (postProcessService) {
-								await env[postProcessService.binding][postProcessConfig.function](request, safeStringify(env), safeStringify(sagContext), payload);
+								await env[postProcessService.binding][postProcessConfig.function](request, safeStringify(env), safeStringify(sagContext));
 							}
 						}
 					}
 
-
-
-
 					return setPoweredByHeader(setCorsHeaders(
 						request,
-						new Response(safeStringify(payload), {
+						new Response(safeStringify(jwt), {
 							status: 200,
 							headers: { 'Content-Type': 'application/json' },
 						}),
 						sagContext.apiConfig.cors
 					));
 				} catch (error) {
+					console.error('Error processing Auth0 callback', error);
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(setCorsHeaders(
 							request,

@@ -28,20 +28,22 @@ async function auth0CallbackHandler(code, authorizer) {
             throw new Error(`Failed to fetch token: ${JSON.stringify(errorData)}`);
         }
 
-        const data = await response.json();
-        return data;
+        const jwt = await response.json();
+        return jwt;
     } catch (error) {
         throw new Error(`Internal Server Error: ${error.message}`);
     }
 }
 
-async function validateIdToken(request, authorizer) {
+async function validateIdToken(request, jwt, authorizer) {
     const { domain, jwks, jwks_uri } = authorizer;
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
+    if (!jwt) {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
+        }
+        jwt = authHeader.split(' ')[1];
     }
-    const jwt = authHeader.split(' ')[1];
 
     try {
         // Create a JWK Set from the JWKS endpoint or the JWKS data
