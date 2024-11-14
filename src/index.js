@@ -156,7 +156,7 @@ export default {
 								(serviceBinding) => serviceBinding.alias === postProcessConfig.binding
 							);
 							if (postProcessService) {
-								await env[postProcessService.binding][postProcessConfig.function](payload, safeStringify(env), safeStringify(sagContext));
+								await env[postProcessService.binding][postProcessConfig.function](request, safeStringify(env), safeStringify(sagContext), payload);
 							}
 						}
 					}
