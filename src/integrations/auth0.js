@@ -25,28 +25,13 @@ async function auth0CallbackHandler(code, authorizer) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            return new Response(JSON.stringify({
-                error: 'Failed to fetch token',
-                details: errorData
-            }), {
-                status: response.status,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            throw new Error(`Failed to fetch token: ${JSON.stringify(errorData)}`);
         }
 
         const data = await response.json();
-        return new Response(JSON.stringify(data), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return data;
     } catch (error) {
-        return new Response(JSON.stringify({
-            error: 'Internal Server Error',
-            message: error.message
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        throw new Error(`Internal Server Error: ${error.message}`);
     }
 }
 
