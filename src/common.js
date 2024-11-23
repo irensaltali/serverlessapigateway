@@ -11,5 +11,24 @@ function safeStringify(obj) {
     });
 }
 
+function generateJsonResponse(isSuccess, data = null, message = '', error = null, statusCode = null) {
+    const responseBody = {
+        status: isSuccess ? 'success' : 'error',
+        message: message || (isSuccess ? 'Operation completed successfully.' : 'An error occurred.'),
+    };
 
-export { safeStringify };
+    if (isSuccess) {
+        responseBody.data = data;
+    } else {
+        responseBody.error = error;
+    }
+
+    return new Response(JSON.stringify(responseBody), {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        status: statusCode !== null ? statusCode : (isSuccess ? 200 : 400),
+    });
+}
+
+export { safeStringify, generateJsonResponse };

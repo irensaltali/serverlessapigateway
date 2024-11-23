@@ -1,4 +1,4 @@
-import { safeStringify } from "./common";
+import { safeStringify, generateJsonResponse } from "./common";
 const { jwtAuth } = await import('./auth');
 const responses = await import('./responses');
 const { ValueMapper } = await import('./mapping');
@@ -129,8 +129,12 @@ export default {
 					const module = await import(`${service.entrypoint}.js`);
 					const Service = module.default;
 					const serviceInstance = new Service();
-					const response = serviceInstance.fetch(request, env, ctx);
-					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+					const response = await serviceInstance.fetch(request, env, ctx);
+					if (response instanceof Response) {
+						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+					} else {
+						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(true, response), sagContext.apiConfig.cors));
+					}
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE_BINDING) {
 				const service =
@@ -139,7 +143,11 @@ export default {
 
 				if (service) {
 					const response = await env[service.binding][matchedPath.config.integration.function](request, safeStringify(env), safeStringify(sagContext));
-					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+					if (response instanceof Response) {
+						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+					} else {
+						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(true, response), sagContext.apiConfig.cors));
+					}
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACK) {
 				try {
