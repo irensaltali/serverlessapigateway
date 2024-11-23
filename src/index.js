@@ -130,11 +130,7 @@ export default {
 					const Service = module.default;
 					const serviceInstance = new Service();
 					const response = await serviceInstance.fetch(request, env, ctx);
-					if (response instanceof Response) {
-						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
-					} else {
-						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(true, response), sagContext.apiConfig.cors));
-					}
+					return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE_BINDING) {
 				const service =
@@ -143,11 +139,7 @@ export default {
 
 				if (service) {
 					const response = await env[service.binding][matchedPath.config.integration.function](request, safeStringify(env), safeStringify(sagContext));
-					if (response instanceof Response) {
-						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
-					} else {
-						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(true, response), sagContext.apiConfig.cors));
-					}
+					return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACK) {
 				try {
