@@ -133,11 +133,10 @@ export default {
 					try {
 						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
 					} catch (error) {
-						console.error('Error processing service response', error);
 						return setPoweredByHeader(
 							setCorsHeaders(
 								request,
-								new Response(safeStringify({ error: error.message, code: error.code || 500 }), {
+								new Response(safeStringify({ error: error.message, code: error.code }), {
 									status: error.statusCode || 500,
 									headers: { 'Content-Type': 'application/json' },
 								}),
@@ -156,11 +155,10 @@ export default {
 						const response = await env[service.binding][matchedPath.config.integration.function](request, safeStringify(env), safeStringify(sagContext));
 						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
 					} catch (error) {
-						console.error('Error invoking service binding function', error);
 						return setPoweredByHeader(
 							setCorsHeaders(
 								request,
-								new Response(safeStringify({ error: error.message, code: error.code || 500 }), {
+								new Response(safeStringify({ error: error.message, code: error.code }), {
 									status: error.statusCode || 500,
 									headers: { 'Content-Type': 'application/json' },
 								}),
