@@ -130,7 +130,21 @@ export default {
 					const Service = module.default;
 					const serviceInstance = new Service();
 					const response = await serviceInstance.fetch(request, env, ctx);
-					return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
+					try {
+						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
+					} catch (error) {
+						console.error('Error processing service response', error);
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: error.message, code: error.code || 500 }), {
+									status: error.statusCode || 500,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							)
+						);
+					}
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE_BINDING) {
 				const service =
@@ -138,8 +152,22 @@ export default {
 					sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.integration.binding);
 
 				if (service) {
-					const response = await env[service.binding][matchedPath.config.integration.function](request, safeStringify(env), safeStringify(sagContext));
-					return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
+					try {
+						const response = await env[service.binding][matchedPath.config.integration.function](request, safeStringify(env), safeStringify(sagContext));
+						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
+					} catch (error) {
+						console.error('Error invoking service binding function', error);
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: error.message, code: error.code || 500 }), {
+									status: error.statusCode || 500,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							)
+						);
+					}
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACK) {
 				try {
