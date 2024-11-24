@@ -140,4 +140,37 @@ async function redirectToLogin(params, authorizer) {
     return Response.redirect(loginUrl, 302);
 }
 
-export { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin };
+async function refreshToken(refreshToken, authorizer) {
+    const { domain, client_id, client_secret } = authorizer;
+
+    const tokenUrl = `https://${domain}/oauth/token`;
+
+    const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id,
+        client_secret,
+        refresh_token: refreshToken
+    });
+
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body.toString()
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Failed to fetch token: ${JSON.stringify(errorData)}`);
+        }
+
+        const jwt = await response.json();
+        return jwt;
+    } catch (error) {
+        throw new Error(`Internal Server Error: ${error.message}`);
+    }
+}
+
+export { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin, refreshToken };
