@@ -7,4 +7,4 @@ class AuthError extends Error {
 	}
 }
 
-export { AuthError }; // Ensure AuthError is exported
+export { AuthError };

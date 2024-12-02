@@ -6,4 +6,5 @@ export const IntegrationTypeEnum = {
 	AUTH0CALLBACK : 'auth0_callback',
 	AUTH0USERINFO : 'auth0_userinfo',
 	AUTH0CALLBACKREDIRECT : 'auth0_callback_redirect',
+	AUTH0REFRESH: 'auth0_refresh',
 }

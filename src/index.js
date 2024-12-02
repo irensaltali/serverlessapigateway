@@ -1,5 +1,5 @@
+import { safeStringify, generateJsonResponse } from "./common";
 const { jwtAuth } = await import('./auth');
-const responses = await import('./responses');
 const { ValueMapper } = await import('./mapping');
 const { setCorsHeaders } = await import('./cors');
 const { PathOperator } = await import('./path-ops');
@@ -7,9 +7,8 @@ const { AuthError } = await import('./types/error_types');
 const { setPoweredByHeader } = await import('./powered-by');
 const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
-const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin } = await import('./integrations/auth0');
 const { ServerlessAPIGatewayContext } = await import('./types/serverless_api_gateway_context');
-
+const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin, refreshToken } = await import('./integrations/auth0');
 
 export default {
 	async fetch(request, env, ctx) {
@@ -69,7 +68,7 @@ export default {
 						return setPoweredByHeader(
 							setCorsHeaders(
 								request,
-								new Response(JSON.stringify({ error: error.message, code: error.code }), {
+								new Response(safeStringify({ error: error.message, code: error.code }), {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
@@ -83,13 +82,13 @@ export default {
 			}
 			else if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'auth0') {
 				try {
-					sagContext.jwtPayload = await validateIdToken(request, sagContext.apiConfig.authorizer);
+					sagContext.jwtPayload = await validateIdToken(request, null, sagContext.apiConfig.authorizer);
 				} catch (error) {
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
 							setCorsHeaders(
 								request,
-								new Response(JSON.stringify({ error: error.message, code: error.code }), {
+								new Response(safeStringify({ error: error.message, code: error.code }), {
 									status: error.statusCode,
 									headers: { 'Content-Type': 'application/json' },
 								}),
@@ -128,8 +127,21 @@ export default {
 					const module = await import(`${service.entrypoint}.js`);
 					const Service = module.default;
 					const serviceInstance = new Service();
-					const response = serviceInstance.fetch(request, env, ctx);
-					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+					const response = await serviceInstance.fetch(request, env, ctx);
+					try {
+						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
+					} catch (error) {
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: error.message, code: error.code }), {
+									status: error.statusCode || 500,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							)
+						);
+					}
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SERVICE_BINDING) {
 				const service =
@@ -137,14 +149,66 @@ export default {
 					sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.integration.binding);
 
 				if (service) {
-					const response = await env[service.binding][matchedPath.config.integration.function](request, JSON.stringify(env), JSON.stringify(sagContext));
-					return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+					try {
+						const response = await env[service.binding][matchedPath.config.integration.function](request, safeStringify(env), safeStringify(sagContext));
+						return setPoweredByHeader(setCorsHeaders(request, generateJsonResponse(response), sagContext.apiConfig.cors));
+					} catch (error) {
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: error.message, code: error.code }), {
+									status: error.statusCode || 500,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							)
+						);
+					}
 				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACK) {
-				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
-				const code = urlParams.get('code');
+				try {
+					const urlParams = new URLSearchParams(sagContext.requestUrl.search);
+					const code = urlParams.get('code');
 
-				return auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
+					const jwt = await auth0CallbackHandler(code, sagContext.apiConfig.authorizer);
+					sagContext.jwtPayload = await validateIdToken(null, jwt.id_token, sagContext.apiConfig.authorizer);
+
+					// Post-process logic
+					if (matchedPath.config.integration.post_process) {
+						const postProcessConfig = matchedPath.config.integration.post_process;
+						if (postProcessConfig.type === 'service_binding') {
+							const postProcessService = sagContext.apiConfig.serviceBindings.find(
+								(serviceBinding) => serviceBinding.alias === postProcessConfig.binding
+							);
+							if (postProcessService) {
+								await env[postProcessService.binding][postProcessConfig.function](request, safeStringify(env), safeStringify(sagContext));
+							}
+						}
+					}
+
+					return setPoweredByHeader(setCorsHeaders(
+						request,
+						new Response(safeStringify(jwt), {
+							status: 200,
+							headers: { 'Content-Type': 'application/json' },
+						}),
+						sagContext.apiConfig.cors
+					));
+				} catch (error) {
+					console.error('Error processing Auth0 callback', error);
+					if (error instanceof AuthError) {
+						return setPoweredByHeader(setCorsHeaders(
+							request,
+							new Response(safeStringify({ error: error.message, code: error.code }), {
+								status: error.statusCode,
+								headers: { 'Content-Type': 'application/json' },
+							}),
+							sagContext.apiConfig.cors
+						));
+					} else {
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
+					}
+				}
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0USERINFO) {
 				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				const accessToken = urlParams.get('access_token');
@@ -153,11 +217,13 @@ export default {
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACKREDIRECT) {
 				const urlParams = new URLSearchParams(sagContext.requestUrl.search);
 				return redirectToLogin({ state: urlParams.get('state') }, sagContext.apiConfig.authorizer);
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0REFRESH) {
+				return this.refreshTokenLogic(request, env, sagContext);
 			} else {
 				return setPoweredByHeader(
 					setCorsHeaders(
 						request,
-						new Response(JSON.stringify(matchedPath.config.response), { headers: { 'Content-Type': 'application/json' } }),
+						new Response(safeStringify(matchedPath.config.response), { headers: { 'Content-Type': 'application/json' } }),
 						sagContext.apiConfig.cors
 					),
 				);
@@ -185,4 +251,56 @@ export default {
 
 		return apiConfig;
 	},
+
+	async refreshTokenLogic(request, env, sagContext) {
+		const urlParams = new URLSearchParams(sagContext.requestUrl.search);
+		const refreshTokenParam = urlParams.get('refresh_token');
+
+		if (!refreshTokenParam) {
+			return setPoweredByHeader(setCorsHeaders(request,
+				new Response(
+					safeStringify({ error: 'Missing refresh token', code: 'missing_refresh_token' }),
+					{ status: 400, headers: { 'Content-Type': 'application/json' } }
+				),
+				sagContext.apiConfig.cors));
+		}
+
+		try {
+			sagContext.jwtPayload = await validateIdToken(request, null, sagContext.apiConfig.authorizer);
+			return setPoweredByHeader(setCorsHeaders(request,
+				new Response(
+					safeStringify({ message: 'Token is still valid', code: 'token_still_valid' }),
+					{ status: 200, headers: { 'Content-Type': 'application/json' } }
+				),
+				sagContext.apiConfig.cors));
+
+		} catch (error) {
+			if (error instanceof AuthError && error.code === 'ERR_JWT_EXPIRED') {
+				try {
+					const newTokens = await refreshToken(refreshTokenParam, sagContext.apiConfig.authorizer);
+					return setPoweredByHeader(setCorsHeaders(
+						request,
+						new Response(safeStringify(newTokens), { status: 200, headers: { 'Content-Type': 'application/json' }, }),
+						sagContext.apiConfig.cors
+					));
+				} catch (refreshError) {
+					return setPoweredByHeader(setCorsHeaders(
+						request,
+						new Response(safeStringify({ error: refreshError.message, code: refreshError.code }), {
+							status: refreshError.statusCode || 500, headers: { 'Content-Type': 'application/json' },
+						}),
+						sagContext.apiConfig.cors
+					));
+				}
+			} else {
+				return setPoweredByHeader(
+					setCorsHeaders(
+						request, new Response(safeStringify({ error: error.message, code: error.code }), {
+							status: error.statusCode || 500, headers: { 'Content-Type': 'application/json' },
+						}),
+						sagContext.apiConfig.cors
+					));
+			}
+		}
+	}
 };

@@ -25,38 +25,25 @@ async function auth0CallbackHandler(code, authorizer) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            return new Response(JSON.stringify({
-                error: 'Failed to fetch token',
-                details: errorData
-            }), {
-                status: response.status,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            throw new Error(`Failed to fetch token: ${JSON.stringify(errorData)}`);
         }
 
-        const data = await response.json();
-        return new Response(JSON.stringify(data), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        const jwt = await response.json();
+        return jwt;
     } catch (error) {
-        return new Response(JSON.stringify({
-            error: 'Internal Server Error',
-            message: error.message
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        throw new Error(`Internal Server Error: ${error.message}`);
     }
 }
 
-async function validateIdToken(request, authorizer) {
+async function validateIdToken(request, jwt, authorizer) {
     const { domain, jwks, jwks_uri } = authorizer;
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
+    if (!jwt) {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
+        }
+        jwt = authHeader.split(' ')[1];
     }
-    const jwt = authHeader.split(' ')[1];
 
     try {
         // Create a JWK Set from the JWKS endpoint or the JWKS data
@@ -153,4 +140,37 @@ async function redirectToLogin(params, authorizer) {
     return Response.redirect(loginUrl, 302);
 }
 
-export { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin };
+async function refreshToken(refreshToken, authorizer) {
+    const { domain, client_id, client_secret } = authorizer;
+
+    const tokenUrl = `https://${domain}/oauth/token`;
+
+    const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id,
+        client_secret,
+        refresh_token: refreshToken
+    });
+
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body.toString()
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Failed to fetch token: ${JSON.stringify(errorData)}`);
+        }
+
+        const jwt = await response.json();
+        return jwt;
+    } catch (error) {
+        throw new Error(`Internal Server Error: ${error.message}`);
+    }
+}
+
+export { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin, refreshToken };
