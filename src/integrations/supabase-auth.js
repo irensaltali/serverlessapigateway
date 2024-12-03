@@ -1,53 +1,53 @@
-import {jwtVerify, errors } from 'jose';
+import { jwtVerify, errors } from 'jose';
 import { createClient } from '@supabase/supabase-js';
 import { AuthError } from "../types/error_types";
 
 async function supabaseEmailOTP(env, email, shouldCreateUser = true) {
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-    const { data, error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-            shouldCreateUser
-        },
-    })
+	const { data, error } = await supabase.auth.signInWithOtp({
+		email,
+		options: {
+			shouldCreateUser
+		},
+	})
 
-    return new Response(JSON.stringify({ message: 'OTP sent successfully' }), { headers: { 'Content-Type': 'application/json' } });
+	return new Response(JSON.stringify({ message: 'OTP sent successfully' }), { headers: { 'Content-Type': 'application/json' } });
 }
 
 async function supabasePhoneOTP(env, phone, shouldCreateUser = true) {
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-    const { data, error } = await supabase.auth.signInWithOtp({
-        phone,
-        options: {
-            shouldCreateUser,
-        },
-    })
+	const { data, error } = await supabase.auth.signInWithOtp({
+		phone,
+		options: {
+			shouldCreateUser
+		},
+	})
 
-    return new Response(JSON.stringify({ message: 'OTP sent successfully' }), { headers: { 'Content-Type': 'application/json' } });
+	return new Response(JSON.stringify({ message: 'OTP sent successfully' }), { headers: { 'Content-Type': 'application/json' } });
 }
 
 
 async function supabaseVerifyOTP(env, email, phone, token) {
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-    const { data, error } = await supabase.auth.verifyOtp({
-        [email ? 'email' : 'phone']: email || phone,
-        token,
-        type: email ? 'email' : 'sms',
-    });
+	const { data, error } = await supabase.auth.verifyOtp({
+		[email ? 'email' : 'phone']: email || phone,
+		token,
+		type: email ? 'email' : 'sms',
+	});
 
-    if (error) {
-        throw new AuthError(error.message);
-    }
+	if (error) {
+		throw new AuthError(error.message);
+	}
 
-    console.log(data);
-    return data.session;
+	console.log(data);
+	return data.session;
 }
 
-async function supabaseJwtVerify(env, request, apiConfig) {
-	const secret = env.SUPABASE_KEY;
+async function supabaseJwtVerify(request, authorizer) {
+	const jwt_secret = new TextEncoder().encode(authorizer.jwt_secret);
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
 		throw new AuthError('No token provided or token format is invalid.', 'AUTH_ERROR', 401);
@@ -55,10 +55,12 @@ async function supabaseJwtVerify(env, request, apiConfig) {
 	const jwt = authHeader.split(' ')[1];
 
 	try {
-		const { payload, protectedHeader } = await jwtVerify(jwt, secret, {
-			issuer: apiConfig.authorizer?.issuer,
-			audience: apiConfig.authorizer?.audience,
-		});
+		const { payload } = await jwtVerify(jwt, jwt_secret,
+			{
+				issuer: authorizer.issuer,
+				audience: authorizer.audience,
+			}
+		);
 
 		return payload;
 	} catch (error) {

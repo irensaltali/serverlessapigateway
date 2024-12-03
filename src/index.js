@@ -1,5 +1,6 @@
 import { safeStringify, generateJsonResponse } from "./common";
 const { jwtAuth } = await import('./auth');
+const responses = await import('./responses');
 const { ValueMapper } = await import('./mapping');
 const { setCorsHeaders } = await import('./cors');
 const { PathOperator } = await import('./path-ops');
@@ -65,6 +66,7 @@ export default {
 				try {
 					sagContext.jwtPayload = await jwtAuth(request, sagContext.apiConfig);
 				} catch (error) {
+					console.error('Error validating JWT', error.message);
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
 							setCorsHeaders(
@@ -101,9 +103,10 @@ export default {
 				}
 			} else if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'supabase') {
 				try {
-					sagContext.jwtPayload = await supabaseJwtVerify(env, request, sagContext.apiConfig);
+					sagContext.jwtPayload = await supabaseJwtVerify(request, sagContext.apiConfig.authorizer);
 					console.log('JWT Payload:', sagContext.jwtPayload);
 				} catch (error) {
+					console.error('Error validating JWT', error.message);
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
 							setCorsHeaders(
