@@ -7,4 +7,6 @@ export const IntegrationTypeEnum = {
 	AUTH0USERINFO : 'auth0_userinfo',
 	AUTH0CALLBACKREDIRECT : 'auth0_callback_redirect',
 	AUTH0REFRESH: 'auth0_refresh',
+	SUPABASEPASSWORDLESSAUTH: 'supabase_passwordless_auth',
+	SUPABASEPASSWORDLESSVERIFY: 'supabase_passwordless_verify',
 }
