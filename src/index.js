@@ -124,6 +124,30 @@ export default {
 				}
 			}
 
+			// Preprocess logic
+			if (matchedPath.config.integration && matchedPath.config.pre_process) {
+				const service =
+					sagContext.apiConfig.serviceBindings &&
+					sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.pre_process.binding);
+
+				if (service) {
+					try {
+						await env[service.binding][matchedPath.config.pre_process.function](request, safeStringify(env), safeStringify(sagContext));
+					} catch (error) {
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: error.message, code: error.code }), {
+									status: error.statusCode || 500,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							)
+						);
+					}
+				}
+			}
+
 			if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY) {
 				const server =
 					sagContext.apiConfig.servers &&
@@ -283,6 +307,30 @@ export default {
 						sagContext.apiConfig.cors
 					),
 				);
+			}
+
+			// Postprocess logic
+			if (matchedPath.config.integration && matchedPath.config.post_process) {
+				const service =
+					sagContext.apiConfig.serviceBindings &&
+					sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.post_process.binding);
+
+				if (service) {
+					try {
+						await env[service.binding][matchedPath.config.post_process.function](request, safeStringify(env), safeStringify(sagContext));
+					} catch (error) {
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: error.message, code: error.code }), {
+									status: error.statusCode || 500,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							)
+						);
+					}
+				}
 			}
 		}
 
