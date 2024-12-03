@@ -1,5 +1,6 @@
 import { safeStringify, generateJsonResponse } from "./common";
 const { jwtAuth } = await import('./auth');
+const responses = await import('./responses');
 const { ValueMapper } = await import('./mapping');
 const { setCorsHeaders } = await import('./cors');
 const { PathOperator } = await import('./path-ops');
@@ -9,6 +10,7 @@ const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
 const { ServerlessAPIGatewayContext } = await import('./types/serverless_api_gateway_context');
 const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin, refreshToken } = await import('./integrations/auth0');
+const { supabaseEmailOTP, supabasePhoneOTP, supabaseVerifyOTP, supabaseJwtVerify } = await import('./integrations/supabase-auth');
 
 export default {
 	async fetch(request, env, ctx) {
@@ -64,6 +66,7 @@ export default {
 				try {
 					sagContext.jwtPayload = await jwtAuth(request, sagContext.apiConfig);
 				} catch (error) {
+					console.error('Error validating JWT', error.message);
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
 							setCorsHeaders(
@@ -79,11 +82,31 @@ export default {
 						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
 					}
 				}
-			}
-			else if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'auth0') {
+			} else if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'auth0') {
 				try {
 					sagContext.jwtPayload = await validateIdToken(request, null, sagContext.apiConfig.authorizer);
 				} catch (error) {
+					if (error instanceof AuthError) {
+						return setPoweredByHeader(
+							setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: error.message, code: error.code }), {
+									status: error.statusCode,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							),
+						);
+					} else {
+						return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
+					}
+				}
+			} else if (sagContext.apiConfig.authorizer && matchedPath.config.auth && sagContext.apiConfig.authorizer.type == 'supabase') {
+				try {
+					sagContext.jwtPayload = await supabaseJwtVerify(request, sagContext.apiConfig.authorizer);
+					console.log('JWT Payload:', sagContext.jwtPayload);
+				} catch (error) {
+					console.error('Error validating JWT', error.message);
 					if (error instanceof AuthError) {
 						return setPoweredByHeader(
 							setCorsHeaders(
@@ -219,6 +242,39 @@ export default {
 				return redirectToLogin({ state: urlParams.get('state') }, sagContext.apiConfig.authorizer);
 			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0REFRESH) {
 				return this.refreshTokenLogic(request, env, sagContext);
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SUPABASEPASSWORDLESSAUTH) {
+				const requestBody = await request.json();
+				const email = requestBody.email;
+				const phone = requestBody.phone;
+
+				if (email) {
+					return supabaseEmailOTP(env, email);
+				} else if (phone) {
+					return supabasePhoneOTP(env, phone);
+				} else {
+					return new Response(safeStringify({ error: 'Missing email or phone', code: 'missing_email_or_phone' }), {
+						status: 400,
+						headers: { 'Content-Type': 'application/json' },
+					});
+				}
+			} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SUPABASEPASSWORDLESSVERIFY) {
+				const requestBody = await request.json();
+				const token = requestBody.token;
+				const email = requestBody.email;
+				const phone = requestBody.phone;
+
+				if (!token || (!email && !phone)) {
+					return new Response(safeStringify({ error: 'Missing token, email, or phone', code: 'missing_token_or_contact' }), {
+						status: 400,
+						headers: { 'Content-Type': 'application/json' },
+					});
+				}
+
+				const response = await supabaseVerifyOTP(env, email, phone, token);
+				return setPoweredByHeader(setCorsHeaders(request,
+					new Response(safeStringify(response), { status: 200, headers: { 'Content-Type': 'application/json' }, }),
+					sagContext.apiConfig.cors
+				));
 			} else {
 				return setPoweredByHeader(
 					setCorsHeaders(
