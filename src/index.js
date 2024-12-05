@@ -136,22 +136,16 @@ export default {
 						sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.pre_process.binding);
 
 					if (service) {
-						try {
-							await env[service.binding][matchedPath.config.pre_process.function](request, safeStringify(env), safeStringify(sagContext));
-						} catch (error) {
-							return setPoweredByHeader(
-								setCorsHeaders(
-									request,
-									new Response(safeStringify({ error: error.message, code: error.code }), {
-										status: error.statusCode || 500,
-										headers: { 'Content-Type': 'application/json' },
-									}),
-									sagContext.apiConfig.cors
-								)
-							);
+						const [body1, body2] = request.body.tee();
+						let response = await env[service.binding][matchedPath.config.pre_process.function](new Request(request, { body: body1 }), safeStringify(env), safeStringify(sagContext));
+						if (response !== true) {
+							return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 						}
+						request = new Request(request, { body: body2 });
 					}
 				}
+
+				console.log('Matched path:', matchedPath.config);
 
 				if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY) {
 					const server =
@@ -235,9 +229,9 @@ export default {
 					const phone = requestBody.phone;
 
 					if (email) {
-						return supabaseEmailOTP(env, email);
+						return await supabaseEmailOTP(env, email);
 					} else if (phone) {
-						return supabasePhoneOTP(env, phone);
+						return await supabasePhoneOTP(env, phone);
 					} else {
 						return new Response(safeStringify({ error: 'Missing email or phone', code: 'missing_email_or_phone' }), {
 							status: 400,
@@ -270,17 +264,6 @@ export default {
 							sagContext.apiConfig.cors
 						),
 					);
-				}
-
-				// Postprocess logic
-				if (matchedPath.config.integration && matchedPath.config.post_process) {
-					const service =
-						sagContext.apiConfig.serviceBindings &&
-						sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.post_process.binding);
-
-					if (service) {
-						await env[service.binding][matchedPath.config.post_process.function](request, safeStringify(env), safeStringify(sagContext));
-					}
 				}
 			}
 
