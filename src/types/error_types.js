@@ -25,4 +25,4 @@ class SAGError extends Error {
 	}
 }
 
-export { AuthError, SAGError};
+export { AuthError, SAGError };
