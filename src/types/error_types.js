@@ -5,15 +5,23 @@ class AuthError extends Error {
 		this.code = code;
 		this.statusCode = statusCode;
 	}
+
+	toApiResponse() {
+		return new Response(JSON.stringify({ error: this.message, code: this.code }), {
+			status: this.statusCode,
+			headers: { 'Content-Type': 'application/json' },
+		});
+	}
 }
 
 class SAGError extends Error {
 	constructor(message, code, statusCode, logMessage) {
 		super(message);
-		this.name = 'GenericError';
+		this.name = 'SAGError';
 		this.code = code;
 		this.statusCode = statusCode;
 		this.logMessage = logMessage;
+		Error.captureStackTrace(this, this.constructor); 
 	}
 
 	toApiResponse() {
