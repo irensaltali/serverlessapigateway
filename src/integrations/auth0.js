@@ -1,5 +1,5 @@
 import { jwtVerify, createLocalJWKSet, createRemoteJWKSet, errors } from 'jose';
-import { AuthError } from "../types/error_types";
+import { AuthError, SAGError } from "../types/error_types";
 
 async function auth0CallbackHandler(code, authorizer) {
     const { domain, client_id, client_secret, redirect_uri } = authorizer;
@@ -25,13 +25,13 @@ async function auth0CallbackHandler(code, authorizer) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`Failed to fetch token: ${JSON.stringify(errorData)}`);
+            throw new SAGError(`Failed to fetch token: ${JSON.stringify(errorData)}`, nil, 500, nil);
         }
 
         const jwt = await response.json();
         return jwt;
     } catch (error) {
-        throw new Error(`Internal Server Error: ${error.message}`);
+        throw new SAGError('Internal Server Error', nil, 500, error.message);
     }
 }
 
@@ -109,13 +109,7 @@ async function getProfile(accessToken, authorizer) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            return new Response(JSON.stringify({
-                error: 'Failed to fetch token',
-                details: errorData
-            }), {
-                status: response.status,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            throw new SAGError('Failed to fetch token', response.status, response.status, JSON.stringify(errorData));
         }
 
         const data = await response.json();
@@ -124,13 +118,7 @@ async function getProfile(accessToken, authorizer) {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (error) {
-        return new Response(JSON.stringify({
-            error: 'Internal Server Error',
-            message: error.message
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        throw new SAGError('Internal Server Error', nil, 500, error.message);
     }
 }
 
@@ -163,13 +151,13 @@ async function refreshToken(refreshToken, authorizer) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`Failed to fetch token: ${JSON.stringify(errorData)}`);
+            throw new SAGError(`Failed to fetch token: ${JSON.stringify(errorData)}`, response.status, response.status, nil);
         }
 
         const jwt = await response.json();
         return jwt;
     } catch (error) {
-        throw new Error(`Internal Server Error: ${error.message}`);
+        throw new SAGError('Internal Server Error', nil, 500, error.message);
     }
 }
 
