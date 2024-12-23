@@ -1,6 +1,17 @@
 function setCorsHeaders(request, response, corsConfig) {
 	const origin = request.headers.get('Origin');
-	const matchingOrigin = corsConfig.allow_origins.find((allowedOrigin) => allowedOrigin === origin);
+	console.log('Origin:', origin);
+	const matchingOrigin = corsConfig.allow_origins.find((allowedOrigin) => {
+		if (allowedOrigin === origin) {
+			return true;
+		}
+		if (allowedOrigin === '*') {
+			return true;
+		}
+		return false;
+	});
+
+	console.log('Matching Origin:', matchingOrigin);
 
 	const headers = new Headers(response.headers);
 	headers.set('Access-Control-Allow-Origin', matchingOrigin || corsConfig.allow_origins[0]);
