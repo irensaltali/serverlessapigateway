@@ -145,8 +145,6 @@ export default {
 					}
 				}
 
-				console.log('Matched path:', matchedPath.config);
-
 				if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY) {
 					const server =
 						sagContext.apiConfig.servers &&
@@ -229,14 +227,16 @@ export default {
 					const phone = requestBody.phone;
 
 					if (email) {
-						return await supabaseEmailOTP(env, email);
+						const response = await supabaseEmailOTP(env, email)
+						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 					} else if (phone) {
-						return await supabasePhoneOTP(env, phone);
+						const response = await supabasePhoneOTP(env, phone)
+						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
 					} else {
-						return new Response(safeStringify({ error: 'Missing email or phone', code: 'missing_email_or_phone' }), {
+						return setPoweredByHeader(setCorsHeaders(new Response(safeStringify({ error: 'Missing email or phone', code: 'missing_email_or_phone' }), {
 							status: 400,
 							headers: { 'Content-Type': 'application/json' },
-						});
+						})));
 					}
 				} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SUPABASEPASSWORDLESSVERIFY) {
 					const requestBody = await request.json();
