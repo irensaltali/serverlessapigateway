@@ -141,7 +141,7 @@
             "method": "GET",
             "path": "/api/v1/proxy/sub",
             "integration": {
-                "type": "http",
+                "type": "http_proxy",
                 "server": "serverlessapigateway-api-sub"
             }
         },
