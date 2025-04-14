@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "jose": "^6.0.10",
-    "wrangler": "^4.7.2",
+    "wrangler": "^4.10.0",
     "@supabase/supabase-js": "^2.49.4"
 
   }
