@@ -185,3 +185,19 @@ dist
 
 # Ignore services_by_link folder
 services_by_link/
+
+# Cloudflare Workers sensitive configuration files
+wrangler.auth.toml
+*.auth.toml
+
+# API configuration files with sensitive data
+src/api-config.json
+src/api-config.api.json
+
+# Test and development configuration files
+**/test-*.sh
+**/setup-*.sh
+
+# Remove examples folder from tracking (if it exists)
+examples/
+scripts/
