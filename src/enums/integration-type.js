@@ -9,4 +9,5 @@ export const IntegrationTypeEnum = {
 	AUTH0REFRESH: 'auth0_refresh',
 	SUPABASEPASSWORDLESSAUTH: 'supabase_passwordless_auth',
 	SUPABASEPASSWORDLESSVERIFY: 'supabase_passwordless_verify',
+	SUPABASEPASSWORDLESSAUTHALT: 'supabase_passwordless_auth_alt',
 }

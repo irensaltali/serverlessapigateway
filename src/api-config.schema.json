@@ -203,6 +203,29 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "const": "supabase"
+                        },
+                        "jwt_secret": {
+                            "type": "string"
+                        },
+                        "issuer": {
+                            "type": "string"
+                        },
+                        "audience": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "jwt_secret",
+                        "issuer",
+                        "audience"
+                    ]
                 }
             ]
         },
@@ -237,7 +260,11 @@
                                     "service_binding",
                                     "auth0_callback",
                                     "auth0_userinfo",
-                                    "auth0_callback_redirect"
+                                    "auth0_callback_redirect",
+                                    "auth0_refresh",
+                                    "supabase_passwordless_auth",
+                                    "supabase_passwordless_verify",
+                                    "supabase_passwordless_auth_alt"
                                 ]
                             },
                             "server": {

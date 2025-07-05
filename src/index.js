@@ -12,7 +12,7 @@ const { createProxiedRequest } = await import('./requests');
 const { IntegrationTypeEnum } = await import('./enums/integration-type');
 const { ServerlessAPIGatewayContext } = await import('./types/serverless_api_gateway_context');
 const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin, refreshToken } = await import('./integrations/auth0');
-const { supabaseEmailOTP, supabasePhoneOTP, supabaseVerifyOTP, supabaseJwtVerify } = await import('./integrations/supabase-auth');
+const { supabaseEmailOTP, supabasePhoneOTP, supabaseVerifyOTP, supabaseJwtVerify, supabaseEmailOTPAlternative } = await import('./integrations/supabase-auth');
 
 export default {
 	async fetch(request, env, ctx) {
@@ -292,6 +292,24 @@ export default {
 						new Response(safeStringify(response), { status: 200, headers: { 'Content-Type': 'application/json' }, }),
 						sagContext.apiConfig.cors
 					));
+				} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SUPABASEPASSWORDLESSAUTHALT) {
+					logger.debug('Processing Supabase passwordless auth (alternative method)');
+					const requestBody = await request.json();
+					const email = requestBody.email;
+
+					if (email) {
+						const response = await supabaseEmailOTPAlternative(env, email)
+						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+					} else {
+						logger.warn('Missing email in Supabase alternative auth request');
+						return setPoweredByHeader(setCorsHeaders(new Response(safeStringify({ 
+							error: 'Missing email - alternative method only supports email', 
+							code: 'missing_email' 
+						}), {
+							status: 400,
+							headers: { 'Content-Type': 'application/json' },
+						})));
+					}
 				} else {
 					logger.debug('Returning static response');
 					return setPoweredByHeader(
