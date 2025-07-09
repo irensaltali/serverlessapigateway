@@ -31,7 +31,7 @@ async function supabaseEmailOTP(env, email, shouldCreateUser = true) {
 	} catch (otpError) {
 		// Approach 2: Try using auth admin API if regular OTP fails
 		try {
-			const adminSupabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY);
+			const adminSupabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 			
 			const { data, error } = await adminSupabase.auth.admin.generateLink({
 				type: 'magiclink',
