@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { AuthError } from "../types/error_types";
 
 async function supabaseEmailOTP(env, email, shouldCreateUser = true) {
-	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 	// Try multiple approaches to force OTP instead of magic link
 	try {
@@ -31,7 +31,7 @@ async function supabaseEmailOTP(env, email, shouldCreateUser = true) {
 	} catch (otpError) {
 		// Approach 2: Try using auth admin API if regular OTP fails
 		try {
-			const adminSupabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_KEY);
+			const adminSupabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY);
 			
 			const { data, error } = await adminSupabase.auth.admin.generateLink({
 				type: 'magiclink',
@@ -57,7 +57,7 @@ async function supabaseEmailOTP(env, email, shouldCreateUser = true) {
 }
 
 async function supabasePhoneOTP(env, phone, shouldCreateUser = true) {
-	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 	const { data, error } = await supabase.auth.signInWithOtp({
 		phone,
@@ -77,7 +77,7 @@ async function supabasePhoneOTP(env, phone, shouldCreateUser = true) {
 }
 
 async function supabaseVerifyOTP(env, email, phone, token) {
-	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 	const { data, error } = await supabase.auth.verifyOtp({
 		[email ? 'email' : 'phone']: email || phone,
@@ -95,7 +95,7 @@ async function supabaseVerifyOTP(env, email, phone, token) {
 
 // Alternative function that tries to use a different approach for email OTP
 async function supabaseEmailOTPAlternative(env, email) {
-	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 	try {
 		// Try using the auth.signUp method which might behave differently
