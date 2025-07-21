@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "jose": "^6.0.11",
+    "jose": "^6.0.12",
     "jsonwebtoken": "^9.0.2",
     "wrangler": "^4.22.0",
     "@supabase/supabase-js": "^2.50.3"
