@@ -1,12 +1,19 @@
 function setCorsHeaders(request, response, corsConfig) {
 	const origin = request.headers.get('Origin');
 	console.log('Origin:', origin);
+	
 	const matchingOrigin = corsConfig.allow_origins.find((allowedOrigin) => {
 		if (allowedOrigin === origin) {
 			return true;
 		}
 		if (allowedOrigin === '*') {
 			return true;
+		}
+		// Handle wildcard patterns like "https://*.example.com"
+		if (allowedOrigin.includes('*')) {
+			const pattern = allowedOrigin.replace(/\*/g, '.*');
+			const regex = new RegExp(`^${pattern}$`);
+			return regex.test(origin);
 		}
 		return false;
 	});
