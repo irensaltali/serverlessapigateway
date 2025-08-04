@@ -2,7 +2,7 @@
   "dependencies": {
     "jose": "^6.0.12",
     "jsonwebtoken": "^9.0.2",
-    "wrangler": "^4.26.0",
+    "wrangler": "^4.27.0",
     "@supabase/supabase-js": "^2.50.3"
   }
 }
