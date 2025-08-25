@@ -3,6 +3,6 @@
     "jose": "^6.0.12",
     "jsonwebtoken": "^9.0.2",
     "wrangler": "^4.26.0",
-    "@supabase/supabase-js": "^2.50.3"
+    "@supabase/supabase-js": "^2.56.0"
   }
 }
