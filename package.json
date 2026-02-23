@@ -9,7 +9,7 @@
     "docs:check": "node scripts/check-docs-sync.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.93.3",
+    "@supabase/supabase-js": "^2.97.0",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "jose": "^6.1.3",
