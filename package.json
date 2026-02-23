@@ -5,7 +5,7 @@
     "test:integration": "vitest run test/integration",
     "test:e2e": "vitest run test/e2e",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "RUN_LOCAL_WORKER_E2E=true vitest run --coverage",
     "docs:check": "node scripts/check-docs-sync.mjs"
   },
   "dependencies": {
