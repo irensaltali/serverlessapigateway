@@ -5,8 +5,31 @@ import { ValueMapper } from '../mapping';
 
 const STRICT_CONFIG_ENV = 'SAG_STRICT_CONFIG';
 const INLINE_CONFIG_ENV = 'SAG_API_CONFIG_JSON';
+const DYNAMIC_CODEGEN_BLOCKED_MESSAGE = 'Code generation from strings disallowed';
 
 let validatorPromise;
+let dynamicCodegenAvailable;
+
+function isDynamicCodegenBlocked(error) {
+	const message = String(error?.message || '');
+	return error instanceof EvalError || message.includes(DYNAMIC_CODEGEN_BLOCKED_MESSAGE);
+}
+
+function supportsDynamicCodegen() {
+	if (typeof dynamicCodegenAvailable !== 'undefined') {
+		return dynamicCodegenAvailable;
+	}
+
+	try {
+		// eslint-disable-next-line no-new-func
+		new Function('return true;');
+		dynamicCodegenAvailable = true;
+	} catch {
+		dynamicCodegenAvailable = false;
+	}
+
+	return dynamicCodegenAvailable;
+}
 
 function isStrictModeEnabled(env) {
 	return String(env?.[STRICT_CONFIG_ENV] ?? '').toLowerCase() === 'true';
@@ -91,11 +114,24 @@ export function normalizeApiConfig(apiConfig) {
 async function getApiConfigValidator() {
 	if (!validatorPromise) {
 		validatorPromise = (async () => {
-			const schemaModule = await import('../api-config.schema.json');
-			const schema = schemaModule.default || schemaModule;
-			const ajv = new Ajv2020({ allErrors: true, strict: false, allowUnionTypes: true });
-			addFormats(ajv);
-			return ajv.compile(schema);
+			if (!supportsDynamicCodegen()) {
+				logger.warn('API configuration schema validation is disabled because runtime code generation is unavailable.');
+				return null;
+			}
+
+			try {
+				const schemaModule = await import('../api-config.schema.json');
+				const schema = schemaModule.default || schemaModule;
+				const ajv = new Ajv2020({ allErrors: true, strict: false, allowUnionTypes: true });
+				addFormats(ajv);
+				return ajv.compile(schema);
+			} catch (error) {
+				if (isDynamicCodegenBlocked(error)) {
+					logger.warn('API configuration schema validation is disabled because runtime blocks dynamic code generation.');
+					return null;
+				}
+				throw error;
+			}
 		})();
 	}
 
@@ -104,11 +140,20 @@ async function getApiConfigValidator() {
 
 export async function validateApiConfig(apiConfig) {
 	const validate = await getApiConfigValidator();
+	if (!validate) {
+		return {
+			valid: true,
+			errors: [],
+			skipped: true,
+		};
+	}
+
 	const valid = validate(apiConfig);
 
 	return {
 		valid: Boolean(valid),
 		errors: validate.errors || [],
+		skipped: false,
 	};
 }
 
@@ -143,7 +188,16 @@ export async function getApiConfig(env) {
 	apiConfig = normalizeApiConfig(apiConfig);
 	apiConfig = await ValueMapper.replaceEnvAndSecrets(apiConfig, env);
 
-	const { valid, errors } = await validateApiConfig(apiConfig);
+	const { valid, errors, skipped } = await validateApiConfig(apiConfig);
+	if (skipped) {
+		if (isStrictModeEnabled(env)) {
+			throw new Error(
+				'API configuration validation is required in strict mode, but runtime blocks dynamic code generation.',
+			);
+		}
+		return apiConfig;
+	}
+
 	if (!valid) {
 		const details = summarizeValidationErrors(errors);
 		const message = `API configuration validation failed: ${details}`;
