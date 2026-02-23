@@ -1,5 +1,5 @@
 import { safeStringify, generateJsonResponse } from "./common";
-import { logger, LOG_LEVELS } from './utils/logger';
+import { logger } from './utils/logger';
 import { getApiConfig } from './utils/config';
 const { jwtAuth } = await import('./auth');
 const responses = await import('./responses');
@@ -14,10 +14,17 @@ const { ServerlessAPIGatewayContext } = await import('./types/serverless_api_gat
 const { auth0CallbackHandler, validateIdToken, getProfile, redirectToLogin, refreshToken } = await import('./integrations/auth0');
 const { supabaseEmailOTP, supabasePhoneOTP, supabaseVerifyOTP, supabaseJwtVerify, supabaseEmailOTPAlternative } = await import('./integrations/supabase-auth');
 
+function getBearerToken(request) {
+	const authHeader = request.headers.get('Authorization');
+	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+		return null;
+	}
+	return authHeader.split(' ')[1];
+}
+
 export default {
 	async fetch(request, env, ctx) {
 		logger.info('Received new request', { method: request.method, url: request.url });
-		logger.debug('Env', env);
 		const sagContext = new ServerlessAPIGatewayContext();
 		try {
 			logger.debug('Loading API configuration');
@@ -80,9 +87,9 @@ export default {
 					try {
 						sagContext.jwtPayload = await jwtAuth(request, sagContext.apiConfig);
 						logger.debug('JWT validation successful');
-					} catch (error) {
-						logger.error('JWT validation failed', error);
-						if (error instanceof AuthError) {
+						} catch (error) {
+							logger.error('JWT validation failed', error);
+							if (error instanceof AuthError) {
 							return setPoweredByHeader(
 								setCorsHeaders(
 									request,
@@ -93,9 +100,9 @@ export default {
 									sagContext.apiConfig.cors
 								),
 							);
-						} else if (error instanceof GenericError) {
-							return setPoweredByHeader(setCorsHeaders(request, error.toApiResponse(), sagContext.apiConfig.cors));
-						} else {
+							} else if (error instanceof SAGError) {
+								return setPoweredByHeader(setCorsHeaders(request, error.toApiResponse(), sagContext.apiConfig.cors));
+							} else {
 							return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
 						}
 					}
@@ -104,9 +111,9 @@ export default {
 					try {
 						sagContext.jwtPayload = await validateIdToken(request, null, sagContext.apiConfig.authorizer);
 						logger.debug('Auth0 token validation successful');
-					} catch (error) {
-						logger.error('Auth0 token validation failed', error);
-						if (error instanceof AuthError) {
+						} catch (error) {
+							logger.error('Auth0 token validation failed', error);
+							if (error instanceof AuthError) {
 							return setPoweredByHeader(
 								setCorsHeaders(
 									request,
@@ -117,9 +124,9 @@ export default {
 									sagContext.apiConfig.cors
 								),
 							);
-						} else if (error instanceof GenericError) {
-							return setPoweredByHeader(setCorsHeaders(request, error.toApiResponse(), sagContext.apiConfig.cors));
-						} else {
+							} else if (error instanceof SAGError) {
+								return setPoweredByHeader(setCorsHeaders(request, error.toApiResponse(), sagContext.apiConfig.cors));
+							} else {
 							return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
 						}
 					}
@@ -128,9 +135,9 @@ export default {
 					try {
 						sagContext.jwtPayload = await supabaseJwtVerify(request, sagContext.apiConfig.authorizer);
 						logger.debug('Supabase token validation successful');
-					} catch (error) {
-						logger.error('Supabase token validation failed', error);
-						if (error instanceof AuthError) {
+						} catch (error) {
+							logger.error('Supabase token validation failed', error);
+							if (error instanceof AuthError) {
 							return setPoweredByHeader(
 								setCorsHeaders(
 									request,
@@ -141,9 +148,9 @@ export default {
 									sagContext.apiConfig.cors
 								),
 							);
-						} else if (error instanceof GenericError) {
-							return setPoweredByHeader(setCorsHeaders(request, error.toApiResponse(), sagContext.apiConfig.cors));
-						} else {
+							} else if (error instanceof SAGError) {
+								return setPoweredByHeader(setCorsHeaders(request, error.toApiResponse(), sagContext.apiConfig.cors));
+							} else {
 							return setPoweredByHeader(setCorsHeaders(request, responses.internalServerErrorResponse(), sagContext.apiConfig.cors));
 						}
 					}
@@ -156,18 +163,26 @@ export default {
 						sagContext.apiConfig.serviceBindings &&
 						sagContext.apiConfig.serviceBindings.find((serviceBinding) => serviceBinding.alias === matchedPath.config.pre_process.binding);
 
-					if (service) {
-						const [body1, body2] = request.body.tee();
-						let response = await env[service.binding][matchedPath.config.pre_process.function](new Request(request, { body: body1 }), safeStringify(env), safeStringify(sagContext));
-						if (response !== true) {
-							logger.debug('Pre-process returned non-true response, returning early');
-							return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+						if (service) {
+							const requestForHook = request.body ? (() => {
+								const [body1, body2] = request.body.tee();
+								request = new Request(request, { body: body2 });
+								return new Request(request, { body: body1 });
+							})() : request;
+							let response = await env[service.binding][matchedPath.config.pre_process.function](requestForHook, safeStringify(env), safeStringify(sagContext));
+							if (response !== true) {
+								logger.debug('Pre-process returned non-true response, returning early');
+								return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
+							}
 						}
-						request = new Request(request, { body: body2 });
 					}
-				}
 
-				if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY) {
+				const isHttpProxyIntegration =
+					matchedPath.config.integration &&
+					(matchedPath.config.integration.type == IntegrationTypeEnum.HTTP_PROXY ||
+						matchedPath.config.integration.type == IntegrationTypeEnum.HTTP);
+
+				if (isHttpProxyIntegration) {
 					logger.debug('Processing HTTP proxy integration');
 					const server =
 						sagContext.apiConfig.servers &&
@@ -240,12 +255,25 @@ export default {
 						}),
 						sagContext.apiConfig.cors
 					));
-				} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0USERINFO) {
-					logger.debug('Processing Auth0 userinfo request');
-					const urlParams = new URLSearchParams(sagContext.requestUrl.search);
-					const accessToken = urlParams.get('access_token');
+						} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0USERINFO) {
+							logger.debug('Processing Auth0 userinfo request');
+							const accessToken = request.headers.get('X-Access-Token') || getBearerToken(request);
+						if (!accessToken) {
+							return setPoweredByHeader(setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: 'Missing bearer token', code: 'missing_access_token' }), {
+									status: 401,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							));
+						}
 
-					return getProfile(accessToken, sagContext.apiConfig.authorizer);
+						return setPoweredByHeader(setCorsHeaders(
+							request,
+							await getProfile(accessToken, sagContext.apiConfig.authorizer),
+							sagContext.apiConfig.cors
+						));
 				} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.AUTH0CALLBACKREDIRECT) {
 					logger.debug('Processing Auth0 callback redirect');
 					const urlParams = new URLSearchParams(sagContext.requestUrl.search);
@@ -265,13 +293,17 @@ export default {
 					} else if (phone) {
 						const response = await supabasePhoneOTP(env, phone)
 						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
-					} else {
-						logger.warn('Missing email or phone in Supabase passwordless auth request');
-						return setPoweredByHeader(setCorsHeaders(new Response(safeStringify({ error: 'Missing email or phone', code: 'missing_email_or_phone' }), {
-							status: 400,
-							headers: { 'Content-Type': 'application/json' },
-						})));
-					}
+						} else {
+							logger.warn('Missing email or phone in Supabase passwordless auth request');
+							return setPoweredByHeader(setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: 'Missing email or phone', code: 'missing_email_or_phone' }), {
+									status: 400,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							));
+						}
 				} else if (matchedPath.config.integration && matchedPath.config.integration.type == IntegrationTypeEnum.SUPABASEPASSWORDLESSVERIFY) {
 					logger.debug('Processing Supabase passwordless verify');
 					const requestBody = await request.json();
@@ -279,13 +311,17 @@ export default {
 					const email = requestBody.email;
 					const phone = requestBody.phone;
 
-					if (!token || (!email && !phone)) {
-						logger.warn('Missing token, email, or phone in Supabase passwordless verify request');
-						return new Response(safeStringify({ error: 'Missing token, email, or phone', code: 'missing_token_or_contact' }), {
-							status: 400,
-							headers: { 'Content-Type': 'application/json' },
-						});
-					}
+						if (!token || (!email && !phone)) {
+							logger.warn('Missing token, email, or phone in Supabase passwordless verify request');
+							return setPoweredByHeader(setCorsHeaders(
+								request,
+								new Response(safeStringify({ error: 'Missing token, email, or phone', code: 'missing_token_or_contact' }), {
+									status: 400,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							));
+						}
 
 					const response = await supabaseVerifyOTP(env, email, phone, token);
 					return setPoweredByHeader(setCorsHeaders(request,
@@ -300,16 +336,20 @@ export default {
 					if (email) {
 						const response = await supabaseEmailOTPAlternative(env, email)
 						return setPoweredByHeader(setCorsHeaders(request, response, sagContext.apiConfig.cors));
-					} else {
-						logger.warn('Missing email in Supabase alternative auth request');
-						return setPoweredByHeader(setCorsHeaders(new Response(safeStringify({ 
-							error: 'Missing email - alternative method only supports email', 
-							code: 'missing_email' 
-						}), {
-							status: 400,
-							headers: { 'Content-Type': 'application/json' },
-						})));
-					}
+						} else {
+							logger.warn('Missing email in Supabase alternative auth request');
+							return setPoweredByHeader(setCorsHeaders(
+								request,
+								new Response(safeStringify({ 
+									error: 'Missing email - alternative method only supports email', 
+									code: 'missing_email' 
+								}), {
+									status: 400,
+									headers: { 'Content-Type': 'application/json' },
+								}),
+								sagContext.apiConfig.cors
+							));
+						}
 				} else {
 					logger.debug('Returning static response');
 					return setPoweredByHeader(
@@ -336,17 +376,24 @@ export default {
 
 	async refreshTokenLogic(request, env, sagContext) {
 		logger.debug('Processing token refresh request');
-		const urlParams = new URLSearchParams(sagContext.requestUrl.search);
-		const refreshTokenParam = urlParams.get('refresh_token');
+		let refreshTokenParam = request.headers.get('X-Refresh-Token');
+		if (!refreshTokenParam && request.method === 'POST') {
+			try {
+				const requestBody = await request.clone().json();
+				refreshTokenParam = requestBody.refresh_token;
+			} catch (_) {
+				// Empty body or malformed JSON; handled below.
+			}
+		}
 
 		if (!refreshTokenParam) {
 			logger.warn('Missing refresh token in request');
 			return setPoweredByHeader(setCorsHeaders(request,
 				new Response(
 					safeStringify({ error: 'Missing refresh token', code: 'missing_refresh_token' }),
-					{ status: 400, headers: { 'Content-Type': 'application/json' } }
-				),
-				sagContext.apiConfig.cors));
+						{ status: 400, headers: { 'Content-Type': 'application/json' } }
+					),
+					sagContext.apiConfig.cors));
 		}
 
 		try {

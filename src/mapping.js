@@ -56,10 +56,10 @@ export class ValueMapper {
 			const templateMatcher = /\$(request\.header|request\.jwt|config|request\.query)\.([a-zA-Z0-9-_.]+)/g;
 			const match = templateMatcher.exec(template);
 
-			if (match) {
-				switch (match[1]) {
-					case 'request.header':
-						return request && request.headers && request.headers.hasOwnProperty(match[2]) ? request.headers.get(match[2]) : null;
+				if (match) {
+					switch (match[1]) {
+						case 'request.header':
+							return request && request.headers ? request.headers.get(match[2]) : null;
 					case 'request.jwt':
 						return jwtPayload && jwtPayload.hasOwnProperty(match[2]) ? jwtPayload[match[2]] : null;
 					case 'config':
@@ -101,11 +101,11 @@ export class ValueMapper {
 						}
 					}
 					// Replace secrets
-					else if (obj[key].startsWith('$secrets.')) {
-						const secretName = obj[key].substring(9); // Get the secret name
-						if (env[secretName] === null) {
-							console.error(`Error: Secret ${secretName} is null.`);
-							obj[key] = ''; // Replace with empty string
+						else if (obj[key].startsWith('$secrets.') || obj[key].startsWith('$secret.')) {
+							const secretName = obj[key].startsWith('$secret.') ? obj[key].substring(8) : obj[key].substring(9);
+							if (env[secretName] === null) {
+								console.error(`Error: Secret ${secretName} is null.`);
+								obj[key] = ''; // Replace with empty string
 						} else {
 							obj[key] = env[secretName] !== undefined ? env[secretName] : ''; // Replace or set to empty string
 						}

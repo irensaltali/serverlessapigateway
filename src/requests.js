@@ -1,17 +1,51 @@
+function isWildcardPath(configPath) {
+	return typeof configPath === 'string' && configPath.endsWith('/{.+}');
+}
+
+function stripWildcardSuffix(configPath) {
+	return configPath.slice(0, -5);
+}
+
+function resolveProxyPath(configPath, requestPath) {
+	if (!isWildcardPath(configPath)) {
+		return requestPath;
+	}
+
+	const basePath = stripWildcardSuffix(configPath);
+	if (!basePath || basePath === '/') {
+		return requestPath;
+	}
+
+	if (requestPath === basePath) {
+		return '/';
+	}
+
+	if (requestPath.startsWith(`${basePath}/`)) {
+		return requestPath.slice(basePath.length) || '/';
+	}
+
+	return requestPath;
+}
+
+function joinTargetUrl(serverUrl, proxyPath, search) {
+	const targetUrl = new URL(serverUrl);
+	const basePath = targetUrl.pathname.replace(/\/+$/, '');
+	const normalizedProxyPath = proxyPath.startsWith('/') ? proxyPath : `/${proxyPath}`;
+	const combinedPath = `${basePath}${normalizedProxyPath}`.replace(/\/{2,}/g, '/');
+
+	targetUrl.pathname = combinedPath;
+	targetUrl.search = search;
+
+	return targetUrl.toString();
+}
+
 // Function to create a new request based on the matched path and server
 function createProxiedRequest(request, server, matchedPath) {
 	const requestUrl = new URL(request.url);
-	let newPath = '';
+	const proxyPath = resolveProxyPath(matchedPath.path, requestUrl.pathname);
+	const targetUrl = joinTargetUrl(server.url, proxyPath, requestUrl.search);
 
-	if (matchedPath.integration && matchedPath.integration.type === 'http_proxy') {
-		// For 'http_proxy', use the original path without the matching part
-		const matchedPathPart = matchedPath.path.replace('{.+}', '');
-		newPath = requestUrl.pathname.replace(matchedPathPart, '/');
-	}
-
-	// Create the new request with the updated URL
-	const newRequest = new Request(server.url + newPath + requestUrl.search, request);
-	return newRequest;
+	return new Request(targetUrl, request);
 }
 
 export { createProxiedRequest };

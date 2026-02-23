@@ -14,13 +14,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout GitBook docs repo
+        uses: actions/checkout@v4
+        with:
+          repository: irensaltali/serverlessapigateway-gitbook
+          path: serverlessapigateway-gitbook
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '21'
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Run Integration Tests
+        run: npm run test:integration
+
+      - name: Run E2E Tests (Local Worker Runtime)
+        env:
+          RUN_LOCAL_WORKER_E2E: "true"
+        run: npm run test:e2e
+
+      - name: Run Coverage
+        run: npm run test:coverage
+
+      - name: Run Docs Sync Checks
+        run: npm run docs:check
 
       - name: Release
         env:

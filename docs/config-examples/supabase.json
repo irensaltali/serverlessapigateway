@@ -1,0 +1,61 @@
+{
+  "$schema": "../../src/api-config.schema.json",
+  "title": "Supabase API Gateway",
+  "description": "Supabase OTP and JWT-protected route example",
+  "cors": {
+    "allow_origins": [
+      "https://app.example.com"
+    ],
+    "allow_methods": [
+      "GET",
+      "POST",
+      "OPTIONS"
+    ],
+    "allow_headers": [
+      "Authorization",
+      "Content-Type"
+    ],
+    "expose_headers": [
+      "X-Request-Id"
+    ],
+    "allow_credentials": true,
+    "max_age": 3600
+  },
+  "authorizer": {
+    "type": "supabase",
+    "jwt_secret": "$env.SUPABASE_JWT_SECRET",
+    "issuer": "https://project-id.supabase.co/auth/v1",
+    "audience": "authenticated"
+  },
+  "paths": [
+    {
+      "method": "POST",
+      "path": "/api/v1/supabase/auth",
+      "integration": {
+        "type": "supabase_passwordless_auth"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/supabase/verify",
+      "integration": {
+        "type": "supabase_passwordless_verify"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/supabase/auth-alt",
+      "integration": {
+        "type": "supabase_passwordless_auth_alt"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/protected",
+      "auth": true,
+      "response": {
+        "status": "protected"
+      }
+    }
+  ]
+}

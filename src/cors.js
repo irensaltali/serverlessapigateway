@@ -1,39 +1,55 @@
-function setCorsHeaders(request, response, corsConfig) {
-	const origin = request.headers.get('Origin');
-	console.log('Origin:', origin);
-	
-	const matchingOrigin = corsConfig.allow_origins.find((allowedOrigin) => {
-		if (allowedOrigin === origin) {
-			return true;
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getMatchingOrigin(requestOrigin, allowedOrigins) {
+	if (!requestOrigin || !Array.isArray(allowedOrigins)) {
+		return null;
+	}
+
+	for (const allowedOrigin of allowedOrigins) {
+		if (allowedOrigin === requestOrigin || allowedOrigin === '*') {
+			return allowedOrigin;
 		}
-		if (allowedOrigin === '*') {
-			return true;
-		}
-		// Handle wildcard patterns like "https://*.example.com"
+
 		if (allowedOrigin.includes('*')) {
-			const pattern = allowedOrigin.replace(/\*/g, '.*');
-			const regex = new RegExp(`^${pattern}$`);
-			return regex.test(origin);
+			const pattern = `^${allowedOrigin.split('*').map(escapeRegExp).join('.*')}$`;
+			if (new RegExp(pattern).test(requestOrigin)) {
+				return requestOrigin;
+			}
 		}
-		return false;
-	});
+	}
 
-	console.log('Matching Origin:', matchingOrigin);
+	return null;
+}
 
+function setCorsHeaders(request, response, corsConfig) {
+	if (!corsConfig) {
+		return response;
+	}
+
+	const origin = request.headers.get('Origin');
+	const matchingOrigin = getMatchingOrigin(origin, corsConfig.allow_origins);
 	const headers = new Headers(response.headers);
-	headers.set('Access-Control-Allow-Origin', matchingOrigin || corsConfig.allow_origins[0]);
-	headers.set('Access-Control-Allow-Methods', corsConfig.allow_methods.join(','));
-	headers.set('Access-Control-Allow-Headers', corsConfig.allow_headers.join(','));
-	headers.set('Access-Control-Expose-Headers', corsConfig.expose_headers.join(','));
-	headers.set('Access-Control-Allow-Credentials', corsConfig.allow_credentials.toString());
-	headers.set('Access-Control-Max-Age', corsConfig.max_age.toString());
 
-	const newResponse = new Response(response.body, {
+	if (matchingOrigin) {
+		const allowCredentials = Boolean(corsConfig.allow_credentials);
+		const allowOriginValue = matchingOrigin === '*' && allowCredentials ? origin : matchingOrigin;
+		headers.set('Access-Control-Allow-Origin', allowOriginValue);
+		headers.set('Vary', 'Origin');
+	}
+
+	headers.set('Access-Control-Allow-Methods', (corsConfig.allow_methods || []).join(','));
+	headers.set('Access-Control-Allow-Headers', (corsConfig.allow_headers || []).join(','));
+	headers.set('Access-Control-Expose-Headers', (corsConfig.expose_headers || []).join(','));
+	headers.set('Access-Control-Allow-Credentials', Boolean(corsConfig.allow_credentials).toString());
+	headers.set('Access-Control-Max-Age', String(corsConfig.max_age || 0));
+
+	return new Response(response.body, {
 		status: response.status,
 		statusText: response.statusText,
-		headers: headers,
+		headers,
 	});
-	return newResponse;
 }
 
 export { setCorsHeaders };

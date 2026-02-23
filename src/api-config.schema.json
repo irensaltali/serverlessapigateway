@@ -1,327 +1,226 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://serverlessapigateway.com/api-config.schema.json",
-    "title": "API Gateway Config",
-    "description": "Configuration for the Serverless API Gateway",
-    "type": "object",
-    "properties": {
-        "servers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "alias": {
-                        "type": "string"
-                    },
-                    "url": {
-                        "type": "string",
-                        "format": "idn-hostname"
-                    }
-                },
-                "required": [
-                    "alias",
-                    "url"
-                ]
-            }
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessapigateway.com/api-config.schema.json",
+  "title": "API Gateway Config",
+  "description": "Configuration for the Serverless API Gateway",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "servers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "alias": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" }
         },
-        "services": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "alias": {
-                        "type": "string"
-                    },
-                    "entrypoint": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "alias",
-                    "entrypoint"
-                ]
-            }
+        "required": ["alias", "url"],
+        "additionalProperties": false
+      }
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "alias": { "type": "string", "minLength": 1 },
+          "entrypoint": { "type": "string", "minLength": 1 }
         },
-        "servicesBindings": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "alias": {
-                        "type": "string"
-                    },
-                    "binding": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "alias",
-                    "binding"
-                ]
-            }
+        "required": ["alias", "entrypoint"],
+        "additionalProperties": false
+      }
+    },
+    "serviceBindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "alias": { "type": "string", "minLength": 1 },
+          "binding": { "type": "string", "minLength": 1 }
         },
-        "cors": {
+        "required": ["alias", "binding"],
+        "additionalProperties": false
+      }
+    },
+    "servicesBindings": {
+      "type": "array",
+      "description": "Deprecated alias for serviceBindings.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "alias": { "type": "string", "minLength": 1 },
+          "binding": { "type": "string", "minLength": 1 }
+        },
+        "required": ["alias", "binding"],
+        "additionalProperties": false
+      }
+    },
+    "cors": {
+      "type": "object",
+      "properties": {
+        "allow_origins": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "anyOf": [
+              { "const": "*" },
+              { "type": "string", "format": "uri" }
+            ]
+          }
+        },
+        "allow_methods": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "*"]
+          }
+        },
+        "allow_headers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "expose_headers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "allow_credentials": { "type": "boolean" },
+        "max_age": { "type": "integer", "minimum": 0 }
+      },
+      "required": [
+        "allow_origins",
+        "allow_methods",
+        "allow_headers",
+        "expose_headers",
+        "allow_credentials",
+        "max_age"
+      ],
+      "additionalProperties": false
+    },
+    "authorizer": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "jwt" },
+            "secret": { "type": "string" },
+            "algorithm": { "const": "HS256" },
+            "audience": { "type": "string" },
+            "issuer": { "type": "string" }
+          },
+          "required": ["type", "secret", "algorithm", "audience", "issuer"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "auth0" },
+            "domain": { "type": "string" },
+            "client_id": { "type": "string" },
+            "client_secret": { "type": "string" },
+            "redirect_uri": { "type": "string", "format": "uri" },
+            "callback_uri": { "type": "string", "format": "uri" },
+            "jwks": { "type": "string" },
+            "jwks_uri": { "type": "string", "format": "uri" },
+            "scope": { "type": "string" }
+          },
+          "required": ["type", "domain", "client_id", "client_secret", "redirect_uri", "scope"],
+          "anyOf": [{ "required": ["jwks"] }, { "required": ["jwks_uri"] }],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "supabase" },
+            "jwt_secret": { "type": "string" },
+            "issuer": { "type": "string" },
+            "audience": { "type": "string" }
+          },
+          "required": ["type", "jwt_secret", "issuer", "audience"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "ANY"]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/"
+          },
+          "integration": {
             "type": "object",
             "properties": {
-                "allow_origins": {
-                    "type": "array",
-                    "uniqueItems": true,
-                    "items": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "idn-hostname"
-                            },
-                            {
-                                "const": "*"
-                            }
-                        ]
-                    }
-                },
-                "allow_methods": {
-                    "type": "array",
-                    "uniqueItems": true,
-                    "items": {
-                        "type": "string",
-                        "enum": [
-                            "GET",
-                            "POST",
-                            "PUT",
-                            "DELETE",
-                            "OPTIONS",
-                            "PATCH",
-                            "*"
-                        ]
-                    }
-                },
-                "allow_headers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "expose_headers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "allow_credentials": {
-                    "type": "boolean"
-                },
-                "max_age": {
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "allow_origins",
-                "allow_methods",
-                "allow_headers",
-                "expose_headers",
-                "allow_credentials",
-                "max_age"
-            ]
-        },
-        "authorizer": {
-            "oneOf": [
-                {
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "const": "jwt"
-                        },
-                        "secret": {
-                            "type": "string"
-                        },
-                        "algorithm": {
-                            "const": "HS256"
-                        },
-                        "audience": {
-                            "type": "string"
-                        },
-                        "issuer": {
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "type",
-                        "secret",
-                        "algorithm",
-                        "audience",
-                        "issuer"
-                    ]
-                },
-                {
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "const": "auth0"
-                        },
-                        "domain": {
-                            "type": "string"
-                        },
-                        "client_id": {
-                            "type": "string"
-                        },
-                        "client_secret": {
-                            "type": "string"
-                        },
-                        "redirect_uri": {
-                            "type": "string"
-                        },
-                        "callback_uri": {
-                            "type": "string"
-                        },
-                        "jwks": {
-                            "type": "string"
-                        },
-                        "jwks_uri": {
-                            "type": "string"
-                        },
-                        "scope": {
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "type",
-                        "domain",
-                        "client_id",
-                        "client_secret",
-                        "redirect_uri",
-                        "callback_uri",
-                        "scope"
-                    ],
-                    "anyOf": [
-                        {
-                            "required": [
-                                "jwks"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "jwks_uri"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "const": "supabase"
-                        },
-                        "jwt_secret": {
-                            "type": "string"
-                        },
-                        "issuer": {
-                            "type": "string"
-                        },
-                        "audience": {
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "type",
-                        "jwt_secret",
-                        "issuer",
-                        "audience"
-                    ]
-                }
-            ]
-        },
-        "paths": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "method": {
-                        "enum": [
-                            "GET",
-                            "POST",
-                            "PUT",
-                            "DELETE",
-                            "OPTIONS",
-                            "PATCH",
-                            "ANY"
-                        ]
-                    },
-                    "path": {
-                        "type": "string",
-                        "format": "pathStart"
-                    },
-                    "integration": {
-                        "type": "object",
-                        "properties": {
-                            "type": {
-                                "enum": [
-                                    "http",
-                                    "http_proxy",
-                                    "service",
-                                    "service_binding",
-                                    "auth0_callback",
-                                    "auth0_userinfo",
-                                    "auth0_callback_redirect",
-                                    "auth0_refresh",
-                                    "supabase_passwordless_auth",
-                                    "supabase_passwordless_verify",
-                                    "supabase_passwordless_auth_alt"
-                                ]
-                            },
-                            "server": {
-                                "type": "string",
-                                "$ref": "#/properties/servers/items/properties/alias"
-                            },
-                            "service": {
-                                "type": "string"
-                            }
-                        },
-                        "required": [
-                            "type"
-                        ]
-                    },
-                    "auth": {
-                        "type": [
-                            "boolean",
-                            "null"
-                        ]
-                    },
-                    "mapping": {
-                        "type": "object",
-                        "properties": {
-                            "headers": {
-                                "type": "object"
-                            },
-                            "query": {
-                                "type": "object"
-                            }
-                        }
-                    },
-                    "variables": {
-                        "type": "object"
-                    },
-                    "response": {
-                        "type": [
-                            "object",
-                            "string"
-                        ],
-                        "properties": {
-                            "status": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                },
-                "required": [
-                    "method",
-                    "path"
+              "type": {
+                "type": "string",
+                "enum": [
+                  "http",
+                  "http_proxy",
+                  "service",
+                  "service_binding",
+                  "auth0_callback",
+                  "auth0_userinfo",
+                  "auth0_callback_redirect",
+                  "auth0_refresh",
+                  "supabase_passwordless_auth",
+                  "supabase_passwordless_verify",
+                  "supabase_passwordless_auth_alt"
                 ]
-            }
+              },
+              "server": { "type": "string" },
+              "binding": { "type": "string" },
+              "function": { "type": "string" }
+            },
+            "required": ["type"],
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": { "enum": ["http", "http_proxy"] }
+                  }
+                },
+                "then": { "required": ["server"] }
+              },
+              {
+                "if": { "properties": { "type": { "const": "service" } } },
+                "then": { "required": ["binding"] }
+              },
+              {
+                "if": { "properties": { "type": { "const": "service_binding" } } },
+                "then": { "required": ["binding", "function"] }
+              }
+            ],
+            "additionalProperties": true
+          },
+          "auth": { "type": ["boolean", "null"] },
+          "mapping": {
+            "type": "object",
+            "properties": {
+              "headers": { "type": "object" },
+              "query": { "type": "object" }
+            },
+            "additionalProperties": false
+          },
+          "variables": { "type": "object" },
+          "response": {
+            "type": ["object", "string", "number", "boolean", "null"]
+          },
+          "pre_process": { "type": "object" }
         },
-        "variables": {
-            "type": "object"
-        },
-        "required": [
-            "paths"
-        ]
-    }
+        "required": ["method", "path"],
+        "additionalProperties": true
+      }
+    },
+    "variables": { "type": "object" }
+  },
+  "required": ["paths"],
+  "additionalProperties": false
 }

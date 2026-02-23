@@ -1,0 +1,14 @@
+{
+  "$schema": "../../src/api-config.schema.json",
+  "title": "Minimal API Gateway",
+  "description": "Minimal schema-valid gateway configuration",
+  "paths": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "response": {
+        "status": "ok"
+      }
+    }
+  ]
+}

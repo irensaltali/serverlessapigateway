@@ -1,6 +1,49 @@
 import { jwtVerify, createLocalJWKSet, createRemoteJWKSet, errors } from 'jose';
 import { AuthError, SAGError } from "../types/error_types";
 
+const AUTH0_ERROR_CODE = 'AUTH0_ERROR';
+const AUTH0_UPSTREAM_ERROR_CODE = 'AUTH0_UPSTREAM_ERROR';
+const AUTH0_NETWORK_ERROR_CODE = 'AUTH0_NETWORK_ERROR';
+
+async function readErrorPayload(response) {
+	try {
+		return await response.clone().json();
+	} catch (_) {
+		try {
+			return await response.text();
+		} catch (__){
+			return null;
+		}
+	}
+}
+
+function createAuth0UpstreamError(action, response, payload) {
+	return new SAGError(
+		`Auth0 ${action} failed`,
+		AUTH0_UPSTREAM_ERROR_CODE,
+		response.status,
+		`Auth0 ${action} failed with status ${response.status}. payload=${typeof payload === 'string' ? payload : JSON.stringify(payload)}`,
+	);
+}
+
+function createAuth0InternalError(error) {
+	return new SAGError(
+		'Internal Server Error',
+		AUTH0_ERROR_CODE,
+		500,
+		error instanceof Error ? error.message : String(error),
+	);
+}
+
+function createAuth0NetworkError(action, error) {
+	return new SAGError(
+		`Auth0 ${action} request failed`,
+		AUTH0_NETWORK_ERROR_CODE,
+		502,
+		error instanceof Error ? error.message : String(error),
+	);
+}
+
 async function auth0CallbackHandler(code, authorizer) {
     const { domain, client_id, client_secret, redirect_uri } = authorizer;
 
@@ -24,14 +67,19 @@ async function auth0CallbackHandler(code, authorizer) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new SAGError(`Failed to fetch token: ${JSON.stringify(errorData)}`, nil, 500, nil);
+            const errorData = await readErrorPayload(response);
+            throw createAuth0UpstreamError('token exchange', response, errorData);
         }
 
-        const jwt = await response.json();
-        return jwt;
+        return await response.json();
     } catch (error) {
-        throw new SAGError('Internal Server Error', nil, 500, error.message);
+        if (error instanceof SAGError || error instanceof AuthError) {
+            throw error;
+        }
+        if (error instanceof TypeError) {
+            throw createAuth0NetworkError('token exchange', error);
+        }
+        throw createAuth0InternalError(error);
     }
 }
 
@@ -49,18 +97,30 @@ async function validateIdToken(request, jwt, authorizer) {
         // Create a JWK Set from the JWKS endpoint or the JWKS data
         let jwksSet;
         if (jwks) {
-            const jwksData = JSON.parse(jwks);
+            let jwksData;
+            try {
+                jwksData = JSON.parse(jwks);
+            } catch (_) {
+                throw new AuthError('JWKS configuration is not valid JSON.', 'AUTH_CONFIG_ERROR', 500);
+            }
             jwksSet = createLocalJWKSet(jwksData);
         }
         else if (jwks_uri) {
             jwksSet = createRemoteJWKSet(new URL(jwks_uri));
         }
 
-        const { payload, protectedHeader } = await jwtVerify(jwt, jwksSet, {
+        if (!jwksSet) {
+            throw new AuthError('No JWKS source configured.', 'AUTH_CONFIG_ERROR', 500);
+        }
+
+        const { payload } = await jwtVerify(jwt, jwksSet, {
             issuer: `https://${domain}/`,
         });
         return payload;
     } catch (error) {
+        if (error instanceof AuthError) {
+            throw error;
+        }
         // Handle token validation errors
         if (error instanceof errors.JOSEAlgNotAllowed) {
             throw new AuthError('Algorithm not allowed', error.code, 401);
@@ -80,8 +140,6 @@ async function validateIdToken(request, jwt, authorizer) {
             throw new AuthError('Invalid JWKS', error.code, 401);
         } else if (error instanceof errors.JWKSMultipleMatchingKeys) {
             throw new AuthError('Multiple matching keys found in JWKS.', error.code, 401);
-        } else if (error instanceof errors.JWKSNoMatchingKey) {
-            throw new AuthError('No matching key in JWKS.', error.code, 401);
         } else if (error instanceof errors.JWSInvalid) {
             throw new AuthError('Invalid JWS', error.code, 401);
         } else if (error instanceof errors.JWSSignatureVerificationFailed) {
@@ -108,8 +166,8 @@ async function getProfile(accessToken, authorizer) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new SAGError('Failed to fetch token', response.status, response.status, JSON.stringify(errorData));
+            const errorData = await readErrorPayload(response);
+            throw createAuth0UpstreamError('userinfo', response, errorData);
         }
 
         const data = await response.json();
@@ -118,7 +176,13 @@ async function getProfile(accessToken, authorizer) {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (error) {
-        throw new SAGError('Internal Server Error', nil, 500, error.message);
+        if (error instanceof SAGError || error instanceof AuthError) {
+            throw error;
+        }
+        if (error instanceof TypeError) {
+            throw createAuth0NetworkError('userinfo', error);
+        }
+        throw createAuth0InternalError(error);
     }
 }
 
@@ -150,14 +214,19 @@ async function refreshToken(refreshToken, authorizer) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new SAGError(`Failed to fetch token: ${JSON.stringify(errorData)}`, response.status, response.status, nil);
+            const errorData = await readErrorPayload(response);
+            throw createAuth0UpstreamError('refresh token', response, errorData);
         }
 
-        const jwt = await response.json();
-        return jwt;
+        return await response.json();
     } catch (error) {
-        throw new SAGError('Internal Server Error', nil, 500, error.message);
+        if (error instanceof SAGError || error instanceof AuthError) {
+            throw error;
+        }
+        if (error instanceof TypeError) {
+            throw createAuth0NetworkError('refresh token', error);
+        }
+        throw createAuth0InternalError(error);
     }
 }
 

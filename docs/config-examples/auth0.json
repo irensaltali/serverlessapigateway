@@ -1,0 +1,68 @@
+{
+  "$schema": "../../src/api-config.schema.json",
+  "title": "Auth0 API Gateway",
+  "description": "Auth0 integration example with protected route",
+  "cors": {
+    "allow_origins": [
+      "https://app.example.com"
+    ],
+    "allow_methods": [
+      "GET",
+      "POST",
+      "OPTIONS"
+    ],
+    "allow_headers": [
+      "Authorization",
+      "Content-Type",
+      "X-Refresh-Token"
+    ],
+    "expose_headers": [
+      "X-Request-Id"
+    ],
+    "allow_credentials": true,
+    "max_age": 3600
+  },
+  "authorizer": {
+    "type": "auth0",
+    "domain": "$env.AUTH0_DOMAIN",
+    "client_id": "$env.AUTH0_CLIENT_ID",
+    "client_secret": "$secret.AUTH0_CLIENT_SECRET",
+    "redirect_uri": "https://api.example.com/api/v1/auth0/callback",
+    "callback_uri": "https://api.example.com/api/v1/auth0/callback-redirect",
+    "jwks_uri": "https://tenant.auth0.com/.well-known/jwks.json",
+    "scope": "openid profile email"
+  },
+  "paths": [
+    {
+      "method": "GET",
+      "path": "/api/v1/auth0/callback",
+      "integration": {
+        "type": "auth0_callback"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth0/callback-redirect",
+      "integration": {
+        "type": "auth0_callback_redirect"
+      },
+      "auth": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth0/profile",
+      "integration": {
+        "type": "auth0_userinfo"
+      },
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth0/refresh",
+      "integration": {
+        "type": "auth0_refresh"
+      },
+      "auth": false
+    }
+  ]
+}
