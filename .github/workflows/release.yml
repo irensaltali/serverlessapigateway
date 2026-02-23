@@ -18,6 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: irensaltali/serverlessapigateway-gitbook
+          ref: main
+          token: ${{ secrets.GITBOOK_REPO_TOKEN || github.token }}
           path: serverlessapigateway-gitbook
 
       - name: Setup Node.js
