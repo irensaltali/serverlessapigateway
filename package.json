@@ -14,7 +14,7 @@
     "ajv-formats": "^3.0.1",
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
-    "wrangler": "^4.73.0"
+    "wrangler": "^4.129.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
