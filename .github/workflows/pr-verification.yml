@@ -1,0 +1,39 @@
+name: PR Verification
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verification:
+    runs-on: avrea-ubuntu-latest-2-vcpu
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Run Integration Tests
+        run: npm run test:integration
+
+      - name: Run E2E Tests (Local Worker Runtime)
+        env:
+          RUN_LOCAL_WORKER_E2E: "true"
+        run: npm run test:e2e
+
+      - name: Run Coverage
+        run: npm run test:coverage
