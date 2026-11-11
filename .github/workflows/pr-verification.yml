@@ -16,6 +16,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
+      - name: Verify checked out SHA
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -25,5 +30,16 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Unit, Integration, and Local Worker E2E Tests with Coverage
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Run Integration Tests
+        run: npm run test:integration
+
+      - name: Run E2E Tests (Local Worker Runtime)
+        env:
+          RUN_LOCAL_WORKER_E2E: "true"
+        run: npm run test:e2e
+
+      - name: Run Coverage
         run: npm run test:coverage
