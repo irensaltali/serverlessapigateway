@@ -10,11 +10,16 @@ jobs:
   verify:
     runs-on: avrea-ubuntu-latest-2-vcpu
     steps:
-      - name: Checkout PR Head
+      - name: Checkout PR head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+
+      - name: Verify checked out SHA
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
