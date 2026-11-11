@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -14,12 +19,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify GitBook deploy key is configured
+        env:
+          GITBOOK_DEPLOY_KEY: ${{ secrets.GITBOOK_DEPLOY_KEY }}
+        run: |
+          if [ -z "$GITBOOK_DEPLOY_KEY" ]; then
+            echo "::error::GITBOOK_DEPLOY_KEY must contain the read-only GitBook deploy key."
+            exit 1
+          fi
+
       - name: Checkout GitBook docs repo
         uses: actions/checkout@v4
         with:
           repository: irensaltali/serverlessapigateway-gitbook
           ref: main
-          token: ${{ secrets.GITBOOK_REPO_TOKEN || github.token }}
+          ssh-key: ${{ secrets.GITBOOK_DEPLOY_KEY }}
+          persist-credentials: false
           path: serverlessapigateway-gitbook
 
       - name: Setup Node.js
