@@ -21,6 +21,17 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
 
+      # The docs repository must be accessible with this read-only token.
+      # Do not supply privileged cross-repository credentials to PR code.
+      - name: Checkout GitBook docs repo (requires read access)
+        uses: actions/checkout@v4
+        with:
+          repository: irensaltali/serverlessapigateway-gitbook
+          ref: main
+          token: ${{ github.token }}
+          path: serverlessapigateway-gitbook
+          persist-credentials: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -43,3 +54,6 @@ jobs:
 
       - name: Run Coverage
         run: npm run test:coverage
+
+      - name: Run Docs Sync Checks
+        run: npm run docs:check
