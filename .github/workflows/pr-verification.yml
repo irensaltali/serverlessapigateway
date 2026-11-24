@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   verify:
-    runs-on: avrea-ubuntu-latest-2-vcpu
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout PR head
         uses: actions/checkout@v4
